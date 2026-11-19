@@ -50,6 +50,12 @@ const q = {
 let version = 1; const listeners = new Set();
 const bump = () => { version++; listeners.forEach((f) => f()); };
 const onChange = (f) => listeners.add(f);
+/* The command line tool and the site share one database file. SQLite's data_version changes only when ANOTHER connection
+   commits, so a change made from the command line also clears this process's page cache without a restart. */
+{
+  const dv = db.prepare('PRAGMA data_version'); let seen = dv.get().data_version;
+  setInterval(() => { try { const v = dv.get().data_version; if (v !== seen) { seen = v; bump(); } } catch (_) { /* closed during shutdown */ } }, 2000).unref();
+}
 
 function getDoc(col, id) { const r = q.getDoc.get(col, id); return r ? { id, data: JSON.parse(r.data), updatedAt: r.updated_at } : null; }
 function listDocs(col) { return q.listDocs.all(col).map((r) => ({ id: r.id, data: JSON.parse(r.data), updatedAt: r.updated_at })); }
