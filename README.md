@@ -59,6 +59,19 @@ docker compose up -d --build
 
 > لازم يبقى عندك سجل DNS للشكلين (`@` و`www`) عشان Caddy يطلّع شهادة لكل واحد. لو مش عايز تحويل من الشكل التاني، امسح البلوك التاني من `Caddyfile` وسطر `ALT_DOMAIN` من `docker-compose.yml`.
 
+### سيرفر عليه Nginx وأنظمة موجودة
+
+شغّل التطبيق فقط، على عنوان محلي لا يفتح بورت عام جديد:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.nginx.yml up -d --build app
+chmod 755 backup.sh
+```
+
+ملفا `deploy/nginx-iconic-*.conf` يضيفان مسارات الموقع داخل إعداد HTTPS للدومين، مع الإبقاء على مسارات الأنظمة القديمة. انسخ ملف البروكسي إلى `/etc/nginx/snippets/iconic-website-proxy.conf` وملف المسارات إلى `/etc/nginx/snippets/iconic-website-locations.conf`، ثم أضف `include /etc/nginx/snippets/iconic-website-locations.conf;` داخل بلوك HTTPS الخاص بالدومين فقط. احتفظ بالشهادة الحالية، وافحص `nginx -t` قبل عمل reload. لا تشغّل Caddy في هذا الوضع.
+
+الموقع يستخدم `/iconic-api/` و`/iconic-assets/` لتجنّب التداخل مع `/api/` و`/assets/` الخاصة بالأنظمة القديمة. ملف الترجمة الثابت هو `server/i18n.json`؛ ليس جزءًا من بيانات المستخدمين في `data/`.
+
 ### بدون Docker
 
 محتاج Node.js **22.13 أو أحدث**:

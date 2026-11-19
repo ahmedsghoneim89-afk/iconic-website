@@ -1,0 +1,10 @@
+# Start only the app behind the existing host Nginx; Caddy is not started.
+services:
+  app:
+    ports:
+      - "127.0.0.1:3001:3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
