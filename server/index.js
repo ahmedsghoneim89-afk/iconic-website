@@ -86,7 +86,13 @@ function notFound(req, res, lang) {
 
 async function route(req, res) {
   const url = new URL(req.url, 'http://x'); let p = url.pathname;
+  // Separate paths keep the website independent of legacy CRM routes on a shared host.
+  if (p === '/iconic-api' || p.startsWith('/iconic-api/')) {
+    url.pathname = '/api' + p.slice('/iconic-api'.length);
+    return api.handle(req, res, url);
+  }
   if (p.startsWith('/api/') || p === '/api') return api.handle(req, res, url);
+  if (p.startsWith('/iconic-assets/')) p = '/assets/' + p.slice('/iconic-assets/'.length);
   const m = req.method;
   if (m !== 'GET' && m !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end(); }
 
@@ -140,7 +146,7 @@ const server = http.createServer((req, res) => {
     const status = e && e.status && e.status < 600 ? e.status : 500;
     if (status >= 500) console.error('[error]', req.method, req.url, e && e.stack || e);
     if (res.headersSent) return res.end();
-    if ((req.url || '').startsWith('/api/')) return api.json(res, status, { error: status >= 500 ? 'Server error' : (e.message || 'error') });
+    if ((req.url || '').startsWith('/api/') || (req.url || '').startsWith('/iconic-api/')) return api.json(res, status, { error: status >= 500 ? 'Server error' : (e.message || 'error') });
     res.writeHead(status, Object.assign(baseHeaders(), { 'Content-Type': 'text/plain; charset=utf-8' })); res.end(status >= 500 ? 'Server error' : 'Request error');
   });
 });

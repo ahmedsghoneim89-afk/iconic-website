@@ -1,6 +1,6 @@
 'use strict';
 /* Strict shapes for everything the dashboard can store. Unknown fields are dropped, wrong types are refused. */
-const I = require('./data/i18n.json');
+const I = require('./i18n.json');
 const REGION_IDS = I.regions.map((r) => r.id), TYPE_IDS = I.types.map((x) => x[0]), PURPOSE_IDS = I.purposes.map((x) => x[0]);
 const CURRENCIES = ['EGP', 'USD', 'EUR', 'GBP', 'AED', 'SAR'];
 const SOCIALS = ['instagram', 'facebook', 'linkedin', 'youtube', 'tiktok', 'x'];
