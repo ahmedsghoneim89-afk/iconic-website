@@ -46,7 +46,7 @@
       if (Date.now() - last < 8000) { status.dataset.state = 'error'; status.textContent = M.wait; return; }
       last = Date.now(); submit.disabled = true; status.textContent = M.sending;
       var r = form.querySelector('input[name="interest"]:checked');
-      fetch('/api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: root.lang, page: location.pathname, interest: r ? r.value : 'inquiry', name: name, phone: digits ? phone : '', email: email, message: f.message.value.trim(), property: f.property.value, agent: f.agent.value }) })
+      fetch('/iconic-api/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: root.lang, page: location.pathname, interest: r ? r.value : 'inquiry', name: name, phone: digits ? phone : '', email: email, message: f.message.value.trim(), property: f.property.value, agent: f.agent.value }) })
         .then(function (res) {
           if (res.status === 429) { status.dataset.state = 'error'; status.textContent = M.wait; return; }
           if (!res.ok) throw new Error(String(res.status));
@@ -64,7 +64,7 @@
     login.addEventListener('submit', function (e) {
       e.preventDefault(); ls.dataset.state = ''; ls.textContent = '';
       var b = login.querySelector('button'); b.disabled = true;
-      fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: login.elements.email.value, password: login.elements.password.value }) })
+      fetch('/iconic-api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: login.elements.email.value, password: login.elements.password.value }) })
         .then(function (res) {
           if (res.ok) { location.href = '/' + (L.lang || 'ar') + '/#admin'; return; }
           ls.dataset.state = 'error'; ls.textContent = res.status === 429 ? L.wait : L.bad; b.disabled = false;
