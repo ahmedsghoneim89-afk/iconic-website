@@ -44,6 +44,7 @@ const regionName = (id) => { const r = REGIONS.find((x) => x.id === id); return 
 /* Property type and purpose are stored as stable keys and shown in the visitor's language. */
 const TYPES = [['residential', { en: 'Residential', ar: 'سكني' }], ['commercial', { en: 'Commercial', ar: 'تجاري' }], ['administrative', { en: 'Administrative', ar: 'إداري' }], ['medical', { en: 'Medical', ar: 'طبي' }], ['land', { en: 'Land', ar: 'أرض' }]];
 const PURPOSES = [['sale', { en: 'For sale', ar: 'للبيع' }], ['rent', { en: 'For rent', ar: 'للإيجار' }]];
+const JOB_TYPES = [['full', { en: 'Full-time', ar: 'دوام كامل' }], ['part', { en: 'Part-time', ar: 'دوام جزئي' }], ['contract', { en: 'Contract', ar: 'عقد' }], ['intern', { en: 'Internship', ar: 'تدريب' }]];
 const keyLabel = (list, k) => { const f = list.find((x) => x[0] === k); return f ? f[1][App.lang] : (k || ''); };
 const typeLabel = (k) => keyLabel(TYPES, k), purposeLabel = (k) => keyLabel(PURPOSES, k);
 
@@ -61,6 +62,7 @@ const DATA = {
      An agent's units are the properties whose `agent` equals the agent's id. */
   teams: [],
   agents: [],
+  branches: [],
   /* Skyline hotspot content, by slot index 1..4 (slot 0 is the brand tower): { label, text, href } */
   hotspots: {},
   formEndpoint: null /* POST URL for the production form handler */
@@ -165,7 +167,15 @@ const I18N = {
     'pg.region.title': 'Properties in {region}', 'pg.region.lede': 'Units handled by the {region} sales team. Open a unit for details, or contact the team directly.',
     'pg.region.empty': 'No units are published for {region} yet.', 'pg.region.team': 'The {region} team', 'pg.region.count': '{n} units',
     'pg.prop.gallery': 'Photos', 'pg.prop.specs': 'Details', 'pg.prop.about': 'About this unit', 'pg.prop.ask': 'Ask about this unit', 'pg.prop.back': 'All properties', 'pg.prop.related': 'More in {region}', 'prop.ref': 'Reference',
-    'pg.404.title': 'Page not found', 'pg.404.body': 'The page you are looking for does not exist or has moved.', 'pg.404.cta': 'Back to the home page'
+    'pg.404.title': 'Page not found', 'pg.404.body': 'The page you are looking for does not exist or has moved.', 'pg.404.cta': 'Back to the home page',
+    'nav.careers': 'Careers', 'foot.careers': 'Careers', 'contact.branches': 'Our branches', 'branch.map': 'Open in Maps', 'branch.call': 'Call', 'branch.hours': 'Hours',
+    'pg.careers.title': 'Careers', 'pg.careers.lede': 'Join the team behind ICONIC Real Estate. Open a role for the details, or send us your CV.', 'pg.careers.open': 'Open positions',
+    'pg.careers.empty.title': 'No open positions right now', 'pg.careers.empty.body': 'You can still send your CV. We keep it and get in touch when a suitable role opens.',
+    'pg.careers.general': 'Send us your CV', 'pg.careers.generalLede': 'No role that fits? Tell us about yourself and we will contact you when something matches.',
+    'job.dept': 'Department', 'job.location': 'Location', 'job.type': 'Type', 'job.posted': 'Posted', 'job.closes': 'Apply before', 'job.about': 'About the role', 'job.req': 'Requirements', 'job.apply': 'Apply for this job', 'job.view': 'View the role', 'job.back': 'All positions',
+    'apply.title': 'Apply now', 'apply.job': 'Position', 'apply.general': 'General application', 'apply.message': 'A few words about you (optional)', 'apply.cv': 'CV or résumé', 'apply.cvHint': 'PDF, DOC or DOCX, up to 5 MB. Optional.',
+    'apply.err.cvType': 'Attach a PDF, DOC or DOCX file.', 'apply.err.cvSize': 'The file is larger than 5 MB.', 'apply.submit': 'Send application', 'apply.sending': 'Sending…',
+    'apply.sent': 'Thank you. Your application was received and our team will be in touch.', 'apply.fail': 'Your application could not be sent. Please try again.', 'apply.consent': 'I agree that ICONIC Real Estate may keep my details and CV to consider my application.'
   },
   ar: {
     'skip.content': 'انتقل إلى المحتوى',
@@ -249,7 +259,15 @@ const I18N = {
     'pg.region.title': 'عقارات {region}', 'pg.region.lede': 'وحدات يتولاها فريق مبيعات {region}. افتح أي وحدة لتفاصيلها، أو تواصل مع الفريق مباشرة.',
     'pg.region.empty': 'لا توجد وحدات منشورة في {region} حاليًا.', 'pg.region.team': 'فريق {region}', 'pg.region.count': '{n} وحدة',
     'pg.prop.gallery': 'الصور', 'pg.prop.specs': 'التفاصيل', 'pg.prop.about': 'عن هذه الوحدة', 'pg.prop.ask': 'اسأل عن هذه الوحدة', 'pg.prop.back': 'كل العقارات', 'pg.prop.related': 'المزيد في {region}', 'prop.ref': 'الرقم المرجعي',
-    'pg.404.title': 'الصفحة غير موجودة', 'pg.404.body': 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها.', 'pg.404.cta': 'العودة إلى الصفحة الرئيسية'
+    'pg.404.title': 'الصفحة غير موجودة', 'pg.404.body': 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها.', 'pg.404.cta': 'العودة إلى الصفحة الرئيسية',
+    'nav.careers': 'الوظائف', 'foot.careers': 'الوظائف', 'contact.branches': 'فروعنا', 'branch.map': 'افتح في الخرائط', 'branch.call': 'اتصل', 'branch.hours': 'المواعيد',
+    'pg.careers.title': 'الوظائف', 'pg.careers.lede': 'انضم إلى الفريق الذي يقف وراء ICONIC Real Estate. افتح أي وظيفة لتفاصيلها، أو أرسل لنا سيرتك الذاتية.', 'pg.careers.open': 'الوظائف المتاحة',
+    'pg.careers.empty.title': 'لا توجد وظائف متاحة حاليًا', 'pg.careers.empty.body': 'يمكنك مع ذلك إرسال سيرتك الذاتية. نحتفظ بها ونتواصل معك عند توفر وظيفة مناسبة.',
+    'pg.careers.general': 'أرسل لنا سيرتك الذاتية', 'pg.careers.generalLede': 'لم تجد وظيفة مناسبة؟ عرّفنا بنفسك وسنتواصل معك عندما تتوفر فرصة تناسبك.',
+    'job.dept': 'القسم', 'job.location': 'المكان', 'job.type': 'نوع الدوام', 'job.posted': 'تاريخ النشر', 'job.closes': 'التقديم حتى', 'job.about': 'عن الوظيفة', 'job.req': 'المتطلبات', 'job.apply': 'قدّم على هذه الوظيفة', 'job.view': 'تفاصيل الوظيفة', 'job.back': 'كل الوظائف',
+    'apply.title': 'قدّم الآن', 'apply.job': 'الوظيفة', 'apply.general': 'تقديم عام', 'apply.message': 'كلمات عن نفسك (اختياري)', 'apply.cv': 'السيرة الذاتية', 'apply.cvHint': 'ملف PDF أو DOC أو DOCX حتى 5 ميجابايت. اختياري.',
+    'apply.err.cvType': 'أرفق ملف PDF أو DOC أو DOCX.', 'apply.err.cvSize': 'حجم الملف أكبر من 5 ميجابايت.', 'apply.submit': 'إرسال الطلب', 'apply.sending': 'جارٍ الإرسال…',
+    'apply.sent': 'شكرًا لك. وصلنا طلبك وسيتواصل معك فريقنا.', 'apply.fail': 'تعذّر إرسال الطلب. حاول مرة أخرى.', 'apply.consent': 'أوافق على أن تحتفظ ICONIC Real Estate ببياناتي وسيرتي الذاتية للنظر في طلبي.'
   }
 };
 /* the shipped copy, kept so the dashboard can show defaults and restore them */

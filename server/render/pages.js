@@ -39,6 +39,7 @@ function innerHeader(c, o) {
   if (c.layout.teams) lis.push(`<li><a class="nav__link" href="/${l}/#teams">${esc(c.t('nav.teams'))}</a></li>`);
   if (c.layout.about) lis.push(`<li><a class="nav__link" href="/${l}/#about">${esc(c.t('nav.about'))}</a></li>`);
   lis.push(`<li><a class="nav__link" href="/${l}/#contact">${esc(c.t('nav.contact'))}</a></li>`);
+  lis.push(`<li><a class="nav__link" href="/${l}/careers"${cur('careers')}>${esc(c.t('nav.careers'))}</a></li>`);
   return `<a class="skip-link" href="#main">${esc(c.t('skip.content'))}</a>
 <header class="hdr hdr--solid" id="hdr"><a class="brand" href="/${l}/" aria-label="${esc(cfg.brand)}"><img class="brand__img" src="/logo.svg" alt="${esc(cfg.brand)}" width="53" height="56"></a>
 <nav class="nav" id="nav" aria-label="Primary"><ul class="nav__list">${lis.join('')}</ul><a class="btn btn--small btn-cta" href="/${l}/#contact">${esc(c.t('cta.viewing'))}</a></nav>
@@ -51,7 +52,7 @@ function innerFooter(c, o) {
 <div class="foot__about"><a class="foot__brand" href="/${l}/" aria-label="${esc(cfg.brand)}"><img class="foot__img" src="/logo.svg" alt="${esc(cfg.brand)}" width="106" height="112" loading="lazy"></a><p>${esc(c.t('meta.desc'))}</p></div>
 ${F.activeRegions(c).length ? `<nav aria-label="${esc(c.t('home.regions'))}"><h2 class="foot__h">${esc(c.t('home.regions'))}</h2><ul>${F.activeRegions(c).map((r) => `<li><a href="/${l}/properties/${r.id}">${esc(r[l])}</a></li>`).join('')}</ul></nav>` : ''}
 <div class="foot__contact"><h2 class="foot__h">${esc(c.t('nav.contact'))}</h2>${acts ? `<div class="contact-actions">${acts}</div>` : ''}<div class="contact-info">${info}</div></div></div>
-<div class="wrap foot__base"><span class="foot__copy">© ${new Date().getFullYear()} ${esc(c.t('foot.rights'))}</span></div></footer>`;
+<div class="wrap foot__base"><span class="foot__copy">© ${new Date().getFullYear()} ${esc(c.t('foot.rights'))}</span><a class="foot__link" href="/${l}/careers">${esc(c.t('foot.careers'))}</a></div></footer>`;
 }
 function crumbsHtml(c, items) {
   return `<nav class="crumbs" aria-label="Breadcrumb"><ol>${items.map((it, i) => (i === items.length - 1 ? `<li aria-current="page">${esc(it[0])}</li>` : `<li><a href="${esc(it[1])}">${esc(it[0])}</a></li>`)).join('')}</ol></nav>`;
@@ -118,6 +119,36 @@ ${related.length ? `<section class="pgp__more" aria-labelledby="more-h"><h2 clas
   const jsonld = S.graph([S.orgNode(c), S.siteNode(c), S.crumbs(c, [[c.t('pg.home'), S.urls.home(l)], [c.t('pg.props.title'), S.urls.props(l)], [region, S.urls.region(l, p.region)], [p.title, S.urls.prop(l, p.slug)]]), S.listingNode(c, p)]);
   return page(c, { path, title, description: p.seoDescription || base, jsonld, nav: 'props', ogType: 'website', image: main ? c.abs(main) : null }, body);
 }
+const jobMeta = (c, j) => [[j.department, 'job.dept'], [j.location, 'job.location'], [j.typeLabel, 'job.type']].filter((x) => x[0]);
+function jobCard(c, j) {
+  const meta = jobMeta(c, j).map((x) => `<span>${esc(x[0])}</span>`).join('');
+  return `<li class="job"><div class="job__main"><h3 class="job__title"><a class="job__open" href="${esc(j.url)}">${esc(j.title)}</a></h3>${meta ? `<p class="job__meta">${meta}</p>` : ''}</div><a class="btn btn--small" href="${esc(j.url)}">${esc(c.t('job.view'))}</a></li>`;
+}
+function careersPage(c) {
+  const l = c.lang, path = (x) => S.urls.careers(x);
+  const title = `${c.t('pg.careers.title')} | ${cfg.brand}`;
+  const list = c.jobs.length
+    ? `<section aria-labelledby="open-h"><h2 class="h3" id="open-h">${esc(c.t('pg.careers.open'))}</h2><ul class="jobs">${c.jobs.map((j) => jobCard(c, j)).join('')}</ul></section>`
+    : `<div class="empty pg__empty"><h2>${esc(c.t('pg.careers.empty.title'))}</h2><p>${esc(c.t('pg.careers.empty.body'))}</p></div>`;
+  const body = `<div class="wrap pg__wrap">${crumbsHtml(c, [[c.t('pg.home'), '/' + l + '/'], [c.t('pg.careers.title')]])}
+<header class="pg__head"><h1 class="h2">${esc(c.t('pg.careers.title'))}</h1><p class="lede">${esc(c.t('pg.careers.lede'))}</p></header>${list}
+<section class="convert pgp__ask" id="apply" aria-labelledby="apply-h"><div class="convert__grid"><div><h2 class="h3" id="apply-h">${esc(c.t('pg.careers.general'))}</h2><p class="lede">${esc(c.t('pg.careers.generalLede'))}</p></div>${F.applyForm(c, {})}</div></section></div>`;
+  const jsonld = S.graph([S.orgNode(c), S.siteNode(c), S.crumbs(c, [[c.t('pg.home'), S.urls.home(l)], [c.t('pg.careers.title'), S.urls.careers(l)]])]);
+  return page(c, { path, title, description: c.clip(c.t('pg.careers.lede'), 158), jsonld, nav: 'careers', noindex: !c.jobs.length }, body);
+}
+function jobPage(c, j) {
+  const l = c.lang, path = (x) => S.urls.job(x, j.slug);
+  const title = `${j.title} | ${c.t('pg.careers.title')} | ${cfg.brand}`;
+  const meta = jobMeta(c, j).map(([v, k]) => `<div><dt>${esc(c.t(k))}</dt><dd>${esc(v)}</dd></div>`);
+  if (j.closes) meta.push(`<div><dt>${esc(c.t('job.closes'))}</dt><dd><time datetime="${esc(j.closes)}">${esc(j.closes)}</time></dd></div>`);
+  const body = `<article class="wrap pg__wrap pgp">${crumbsHtml(c, [[c.t('pg.home'), '/' + l + '/'], [c.t('pg.careers.title'), '/' + l + '/careers'], [j.title]])}
+<header class="pg__head"><h1 class="h2">${esc(j.title)}</h1>${meta.length ? `<dl class="specs">${meta.join('')}</dl>` : ''}</header>
+${j.description ? `<section class="pgp__about"><h2>${esc(c.t('job.about'))}</h2>${para(j.description)}</section>` : ''}
+${j.requirements ? `<section class="pgp__about"><h2>${esc(c.t('job.req'))}</h2>${para(j.requirements)}</section>` : ''}
+<section class="convert pgp__ask" id="apply" aria-labelledby="apply-h"><div class="convert__grid"><div><h2 class="h3" id="apply-h">${esc(c.t('job.apply'))}</h2><p class="lede">${esc(j.title)}</p><p><a class="btn" href="/${l}/careers">${esc(c.t('job.back'))}</a></p></div>${F.applyForm(c, { job: j })}</div></section></article>`;
+  const jsonld = S.graph([S.orgNode(c), S.siteNode(c), S.crumbs(c, [[c.t('pg.home'), S.urls.home(l)], [c.t('pg.careers.title'), S.urls.careers(l)], [j.title, S.urls.job(l, j.slug)]]), S.jobNode(c, j)]);
+  return page(c, { path, title, description: c.clip(j.description || (j.title + '. ' + c.t('pg.careers.lede')), 158), jsonld, nav: 'careers' }, body);
+}
 function notFoundPage(c) {
   const l = c.lang, path = (x) => '/' + x + '/';
   const body = `<div class="wrap pg__wrap pg__nf"><h1 class="h2">${esc(c.t('pg.404.title'))}</h1><p class="lede">${esc(c.t('pg.404.body'))}</p><p><a class="btn btn--primary" href="/${l}/">${esc(c.t('pg.404.cta'))}</a></p></div>`;
@@ -132,4 +163,4 @@ function loginPage(c) {
 <button class="btn btn--primary" type="submit">${esc(X.go)}</button><p class="status" id="loginStatus" role="alert" aria-live="polite"></p></form></div>`;
   return page(c, { path, title: `${X.t} | ${cfg.brand}`, description: X.t, noindex: true, nav: '' }, body).replace('<meta name="robots"', '<meta name="robots"');
 }
-module.exports = { propertiesPage, regionPage, propertyPage, notFoundPage, loginPage, head, page, indexable, para };
+module.exports = { careersPage, jobPage, propertiesPage, regionPage, propertyPage, notFoundPage, loginPage, head, page, indexable, para };

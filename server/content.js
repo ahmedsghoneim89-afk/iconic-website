@@ -9,7 +9,7 @@ let cache = null, cacheVersion = -1;
 
 function snapshot() {
   if (cache && cacheVersion === store.version) return cache;
-  const raw = { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [] };
+  const raw = { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [], branches: [], jobs: [] };
   let updated = 0;
   for (const d of store.allDocs()) {
     updated = Math.max(updated, d.updatedAt);
@@ -17,18 +17,22 @@ function snapshot() {
     else if (raw[d.col] && Array.isArray(raw[d.col])) raw[d.col].push(Object.assign({ id: d.id, _u: d.updatedAt }, d.data));
   }
   const ord = (a, b) => (a.order == null ? 100 : a.order) - (b.order == null ? 100 : b.order) || String(a.id).localeCompare(String(b.id));
-  ['teams', 'agents', 'properties'].forEach((k) => raw[k].sort(ord));
+  ['teams', 'agents', 'properties', 'branches', 'jobs'].forEach((k) => raw[k].sort(ord));
   cache = { raw, updated, version: store.version }; cacheVersion = store.version;
   return cache;
 }
 
-function slugFor(id, data) {
-  const base = slugBase((data.title && data.title.en) || (data.project && data.project.en) || '');
+function slugFor(id, data, fallback) {
+  const base = slugBase((data.title && data.title.en) || (data.project && data.project.en) || '', fallback);
   return base + '-' + String(id).replace(/[^a-z0-9]/gi, '').slice(-7).toLowerCase();
 }
 function write(col, id, body) {
   const data = validate(col, id, body);
   if (col === 'properties') { const prev = store.getDoc(col, id); data.slug = (prev && prev.data.slug) || slugFor(id, data); }   // a unit keeps its address even when its title changes
+  if (col === 'jobs') {   // a job keeps its address and its first publishing date
+    const prev = store.getDoc(col, id);
+    data.slug = (prev && prev.data.slug) || slugFor(id, data, 'job'); data.posted = (prev && prev.data.posted) || new Date().toISOString().slice(0, 10);
+  }
   store.putDoc(col, id, data);
   return data;
 }

@@ -7,8 +7,8 @@ const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</
 const jsonForScript = (o) => JSON.stringify(o).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 const sha = (s, n = 24) => crypto.createHash('sha256').update(s).digest('hex').slice(0, n);
 
-function slugBase(s) {
-  return String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'unit';
+function slugBase(s, fallback) {
+  return String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || fallback || 'unit';
 }
 
 const parseCookies = (h) => { const o = {}; String(h || '').split(';').forEach((p) => { const i = p.indexOf('='); if (i > 0) o[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim()); }); return o; };
@@ -40,4 +40,10 @@ function compress(enc, body, key) {
 }
 const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml|manifest\+json|ld\+json)|image\/svg)/;
 
-module.exports = { esc, jsonForScript, sha, slugBase, parseCookies, readBody, readJson, pickEncoding, compress, COMPRESSIBLE };
+/* small helpers shared by the API modules */
+const httpError = (status, message) => { const e = new Error(message); e.status = status; return e; };
+const sendJson = (res, status, body, headers) => { const b = Buffer.from(JSON.stringify(body)); res.writeHead(status, Object.assign({ 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': b.length, 'Cache-Control': 'no-store' }, headers)); res.end(b); };
+const cleanText = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
+const csvCell = (v) => { let s = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+
+module.exports = { httpError, sendJson, cleanText, csvCell, esc, jsonForScript, sha, slugBase, parseCookies, readBody, readJson, pickEncoding, compress, COMPRESSIBLE };

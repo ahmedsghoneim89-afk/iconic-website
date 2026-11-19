@@ -23,12 +23,13 @@ function homePage(c, opts) {
   if (c.teams.length) b = b.replace('<div class="empty" id="teamsEmpty">', '<div class="empty" id="teamsEmpty" hidden>');
   if (!c.layout.teams) b = b.replace('<section class="teams" id="teams"', '<section class="teams" id="teams" hidden').replace('<li><a class="nav__link" href="#teams"', '<li hidden><a class="nav__link" href="#teams"').replace('<li><a href="#teams" data-chap="teams">', '<li hidden><a href="#teams" data-chap="teams">');
   if (!c.layout.about) b = b.replace('<section class="story" id="about"', '<section class="story" id="about" hidden').replace('<li><a class="nav__link" href="#about"', '<li hidden><a class="nav__link" href="#about"').replace('<li><a href="#about" data-chap="about">', '<li hidden><a href="#about" data-chap="about">');
+  b = b.split('/__LANG__/').join('/' + l + '/');
   const o2 = other(l);
   b = b.replace(/<button class="lang"[^>]*>[^<]*<\/button>/, `<a class="lang" id="langBtn" href="/${o2}/" hreflang="${o2}" lang="${o2}" aria-label="${esc(c.t('lang.aria'))}">${esc(c.t('lang.label'))}</a>`);
 
   const strip1 = (a) => (Array.isArray(a) ? a.map(strip) : a);
-  const boot = { lang: l, site: cfg.siteUrl, alt: { en: '/en/', ar: '/ar/' }, data: { company: c.raw.company, texts: c.raw.texts, hotspots: c.raw.hotspots, about: c.raw.about, layout: c.raw.layout, teams: strip1(c.raw.teams), agents: strip1(c.raw.agents), properties: strip1(c.raw.properties) } };
-  const headJs = `(function(){var d=document.documentElement;d.classList.add('js');try{history.scrollRestoration='manual';}catch(e){}try{document.cookie='iconic_lang=${l};path=/;max-age=31536000;SameSite=Lax';}catch(e){}try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('reduced');else if(!${opts.bot ? 'true' : 'false'}&&!location.hash&&document.cookie.indexOf('iconic_admin=1')<0&&!sessionStorage.getItem('ic-intro')){d.classList.add('intro-on');sessionStorage.setItem('ic-intro','1');}}catch(e){if(!${opts.bot ? 'true' : 'false'})d.classList.add('intro-on');}})();`;
+  const boot = { lang: l, site: cfg.siteUrl, alt: { en: '/en/', ar: '/ar/' }, data: { company: c.raw.company, texts: c.raw.texts, hotspots: c.raw.hotspots, about: c.raw.about, layout: c.raw.layout, teams: strip1(c.raw.teams), agents: strip1(c.raw.agents), properties: strip1(c.raw.properties), branches: strip1(c.raw.branches) } };
+  const headJs = `(function(){var d=document.documentElement;d.classList.add('js');try{history.scrollRestoration='manual';}catch(e){}try{document.cookie='iconic_lang=${l};path=/;max-age=31536000;SameSite=Lax';}catch(e){}try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('reduced');else if(!${opts.bot ? 'true' : 'false'}&&!location.hash)d.classList.add('intro-on');}catch(e){if(!${opts.bot ? 'true' : 'false'})d.classList.add('intro-on');}})();`;
   const bootJs = 'window.__ICONIC__=' + jsonForScript(boot) + ';';
   inline.push(headJs, bootJs);
 

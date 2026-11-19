@@ -5,6 +5,7 @@ const cfg = require('./config');
 const store = require('./db');
 const auth = require('./auth');
 const content = require('./content');
+const applications = require('./applications');
 const { readJson, readBody, sha } = require('./util');
 
 const { db } = store;
@@ -91,21 +92,26 @@ function leadsCsv(res) {
 }
 const leadOut = (r) => ({ id: r.id, created: r.created_at, status: r.status, interest: r.interest, name: r.name, phone: r.phone, email: r.email, message: r.message, property: r.property_id, agent: r.agent_id, lang: r.lang, page: r.page, note: r.note || '' });
 
+/* ---- who may do what: admin everything, editor = site content + enquiries, hr = jobs + applications ---- */
+const WRITERS = { jobs: ['admin', 'hr'] }, CONTENT_WRITERS = ['admin', 'editor'];
+const need = (s, roles) => { if (!roles.includes(s.role)) throw err(403, 'Your account cannot do this'); };
+
 /* ---- router ---- */
 async function handle(req, res, url) {
   const p = url.pathname.replace(/^\/api/, '') || '/', m = req.method, seg = p.split('/').filter(Boolean).map(decodeURIComponent);
 
   if (p === '/leads' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return createLead(req, res); }
+  if (p === '/applications' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return applications.create(req, res); }
   if (p === '/login' && m === 'POST') {
     if (!auth.sameOrigin(req)) throw err(403, 'origin');
     const b = await readJson(req, 4096), ip = auth.clientIp(req);
     const r = auth.login(ip, b.email, b.password);
     if (r.status === 429) throw err(429, 'Too many attempts. Try again in a few minutes.');
     if (r.status !== 200) throw err(401, 'Wrong email or password');
-    return json(res, 200, { ok: true, csrf: r.csrf, email: r.email }, { 'Set-Cookie': auth.sessionCookies(r.token) });
+    return json(res, 200, { ok: true, csrf: r.csrf, email: r.email, role: r.role }, { 'Set-Cookie': auth.sessionCookies(r.token) });
   }
   const s = auth.session(req);
-  if (p === '/me' && m === 'GET') return json(res, 200, s ? { admin: true, csrf: s.csrf, email: s.email } : { admin: false });
+  if (p === '/me' && m === 'GET') return json(res, 200, s ? { admin: true, csrf: s.csrf, email: s.email, role: s.role, name: s.name } : { admin: false });
   if (!s) throw err(401, 'Sign in required');
   if (m !== 'GET' && m !== 'HEAD') {
     if (!auth.sameOrigin(req)) throw err(403, 'origin');
@@ -118,16 +124,45 @@ async function handle(req, res, url) {
     if (!auth.changePassword(s.userId, b.current, b.next)) throw err(403, 'Current password is wrong');
     return json(res, 200, { ok: true });
   }
-  if (p === '/assets' && m === 'POST') return upload(req, res);
+  if (p === '/assets' && m === 'POST') { need(s, CONTENT_WRITERS); return upload(req, res); }
+
+  /* ---- people who can sign in (admin only) ---- */
+  if (seg[0] === 'users') {
+    need(s, ['admin']);
+    if (!seg[1] && m === 'GET') return json(res, 200, { users: auth.listUsers(), roles: auth.ROLES, me: s.userId });
+    if (!seg[1] && m === 'POST') {
+      const b = await readJson(req, 4096);
+      const id = auth.createUser(b.email, b.password, String(b.role || 'editor'), b.name);
+      return json(res, 201, { user: auth.listUsers().find((u) => u.id === id) });
+    }
+    if (seg[1] && /^\d+$/.test(seg[1])) {
+      const id = Number(seg[1]);
+      if (m === 'PATCH') { const b = await readJson(req, 4096); return json(res, 200, { user: auth.updateUser(id, { role: b.role, name: b.name, password: b.password }, s.userId) }); }
+      if (m === 'DELETE') { auth.removeUser(id, s.userId); return noContent(res); }
+    }
+    throw err(404, 'not found');
+  }
 
   if (seg[0] === 'db') {
     const col = seg[1], id = seg[2];
     if (m === 'GET' && col && !id) return json(res, 200, { docs: content.list(col) });
     if (m === 'GET' && col && id) { const d = content.read(col, id); return d ? json(res, 200, { id, data: d.data }) : json(res, 404, { error: 'not found' }); }
+    if ((m === 'PUT' || m === 'DELETE') && col) need(s, WRITERS[col] || CONTENT_WRITERS);
     if (m === 'PUT' && col && id) { const data = content.write(col, id, await readJson(req, 512 * 1024)); return json(res, 200, { id, data }); }
     if (m === 'DELETE' && col && id) { content.del(col, id); return noContent(res); }
   }
 
+  /* ---- job applications (admin and hr) ---- */
+  if (seg[0] === 'applications' || p === '/applications.csv') {
+    need(s, ['admin', 'hr']);
+    if (p === '/applications.csv' && m === 'GET') return applications.csv(res);
+    if (!seg[1] && m === 'GET') return applications.list(req, res, url);
+    if (seg[1] && /^\d+$/.test(seg[1])) return applications.item(req, res, Number(seg[1]), seg[2]);
+    throw err(404, 'not found');
+  }
+
+  /* ---- enquiries (admin and editor) ---- */
+  if (p === '/leads.csv' || p === '/leads' || (seg[0] === 'leads' && seg[1])) need(s, CONTENT_WRITERS);
   if (p === '/leads.csv' && m === 'GET') return leadsCsv(res);
   if (p === '/leads' && m === 'GET') {
     const st = STATUSES.includes(url.searchParams.get('status')) ? url.searchParams.get('status') : '';

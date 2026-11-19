@@ -1,5 +1,5 @@
 /* ---------- Admin dashboard ----------
-   Opens from the footer link or #admin, only for people who can edit this page. Writes are also limited to editors by the database rules,
+   Opens on #admin (reached through the /admin address), only for people who can edit this page. Writes are also limited to editors by the database rules,
    so hiding the dashboard is a convenience and not the security boundary. */
 const AD = {
   en: {
@@ -406,7 +406,7 @@ function viewBackup() {
 const VIEWS = { overview: viewOverview, company: viewCompany, teams: viewTeams, agents: viewAgents, units: viewUnits, backup: viewBackup };
 function drawChrome() {
   $('.adm__title', admEl).textContent = ta('title'); $('.adm__lang', admEl).textContent = ta('lang'); $('.adm__x', admEl).textContent = ta('close');
-  $$('.adm__nav button', admEl).forEach((b) => { b.textContent = ta('nav.' + b.dataset.sec) + (b.dataset.sec === 'leads' && AS.newLeads ? ' (' + fmtNum(AS.newLeads) + ')' : ''); b.setAttribute('aria-current', String(b.dataset.sec === AS.sec)); });
+  $$('.adm__nav button', admEl).forEach((b) => { b.textContent = ta('nav.' + b.dataset.sec) + (b.dataset.sec === 'leads' && AS.newLeads ? ' (' + fmtNum(AS.newLeads) + ')' : '') + (b.dataset.sec === 'applications' && AS.newApps ? ' (' + fmtNum(AS.newApps) + ')' : ''); b.setAttribute('aria-current', String(b.dataset.sec === AS.sec)); });
   const warn = $('.adm__warn', admEl); warn.hidden = !(!Store.db || Store.error); warn.textContent = !Store.db ? ta('store.off') : ta('store.err');
 }
 function drawAdmin() {
@@ -433,13 +433,14 @@ function buildAdmin() {
 function openAdmin() {
   if (!Store.canEdit) return;
   if (!admEl) buildAdmin();
-  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) refreshLeadCount();
+  if (!SECTIONS.includes(AS.sec)) AS.sec = SECTIONS[0];
+  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); }
   $('.adm__nav button[aria-current=true]', admEl).focus({ preventScroll: true });
 }
-function closeAdmin() { if (!admEl) return; AS.open = false; admEl.hidden = true; root.style.overflow = ''; if (location.hash === '#admin') { try { history.replaceState(null, '', location.pathname + location.search); } catch (_) { /* ignore */ } } const l = $('#adminLink'); if (l) l.focus({ preventScroll: true }); }
+function closeAdmin() { if (!admEl) return; AS.open = false; admEl.hidden = true; root.style.overflow = ''; if (location.hash === '#admin') { try { history.replaceState(null, '', location.pathname + location.search); } catch (_) { /* ignore */ } } }
+/* No visible link on the public site: signed-in editors reach the dashboard through the /admin address, which lands here on #admin */
 function initAdminEntry() {
-  const link = $('#adminLink'); if (!link || !Store.canEdit) return;
-  link.hidden = false; link.addEventListener('click', (e) => { e.preventDefault(); openAdmin(); });
+  if (!Store.canEdit) return;
   window.addEventListener('hashchange', () => { if (location.hash === '#admin') openAdmin(); });
   if (location.hash === '#admin') openAdmin();
 }

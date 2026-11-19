@@ -80,3 +80,18 @@ html[lang="ar"] .foot__h{font-weight:700}
 .regionlinks{display:grid;gap:var(--s-2)}
 .regionlinks__t{margin:0}
 .pg__team{gap:var(--s-6)}
+
+/* careers */
+.jobs{display:grid;gap:var(--s-3);list-style:none;margin:var(--s-4) 0 0;padding:0}
+.job{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s-3) var(--s-5);padding:var(--s-5);border:var(--b-hair);border-radius:var(--r-1);background:var(--c-obsidian-900)}
+.job__main{display:grid;gap:var(--s-2);min-width:0}
+.job__title{font:500 1.3rem/1.25 var(--f-display);margin:0}
+html[lang="ar"] .job__title{font-weight:700}
+.job__open{color:var(--c-ivory-100);text-decoration:none}
+.job__open:hover,.job__open:focus-visible{color:var(--c-gold-300)}
+.job__meta{display:flex;flex-wrap:wrap;gap:.2rem var(--s-4);margin:0;color:var(--c-ivory-500);font-size:.92rem}
+.foot__link{margin-inline-start:auto}
+.foot__base .foot__link{color:var(--c-ivory-300)}
+.foot--pg .branches{gap:var(--s-3)}
+.pgp .specs{margin-block-start:var(--s-2)}
+.form input[type="file"]{padding:.55rem;cursor:pointer}

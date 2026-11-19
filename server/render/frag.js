@@ -52,10 +52,21 @@ function contactActions(c) {
   if (co.email) out.push(`<a class="btn" href="mailto:${esc(co.email)}">${esc(c.t('contact.email'))}</a>`);
   return out.join('');
 }
+/* the company's branches: name, address, phone, hours and a map link, each only when filled in */
+function branchItem(c, b) {
+  const lines = [];
+  if (b.phone) lines.push(`<a dir="ltr" href="tel:${esc(String(b.phone).replace(/[^\d+]/g, ''))}">${esc(b.phone)}</a>`);
+  if (waNumber(b.whatsapp)) lines.push(`<a dir="ltr" href="https://wa.me/${waNumber(b.whatsapp)}" target="_blank" rel="noopener">${esc(c.t('contact.whatsapp'))}</a>`);
+  return `<li class="branch"><h4 class="branch__name">${esc(b.name || b.city)}</h4>${b.city && b.name ? `<span class="branch__city">${esc(b.city)}</span>` : ''}${b.address ? `<p class="branch__addr">${esc(b.address)}</p>` : ''}${b.hours ? `<p class="branch__hours">${esc(b.hours)}</p>` : ''}${lines.length || b.map ? `<p class="branch__lines">${lines.join('')}${b.map ? `<a href="${esc(b.map)}" target="_blank" rel="noopener">${esc(c.t('branch.map'))}</a>` : ''}</p>` : ''}</li>`;
+}
+function branchesBlock(c) {
+  return c.branches.length ? `<div class="ci__row ci__branches"><span class="ci__k">${esc(c.t('contact.branches'))}</span><ul class="branches">${c.branches.map((b) => branchItem(c, b)).join('')}</ul></div>` : '';
+}
 function contactInfo(c) {
   const co = c.company, rows = [];
   if (co.address) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.address'))}</span><p>${esc(co.address)}</p></div>`);
   if (co.hours) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.hours'))}</span><p>${esc(co.hours)}</p></div>`);
+  if (c.branches.length) rows.push(branchesBlock(c));
   const links = SOCIAL_NAMES.map(([k, n]) => [n, httpsUrl(co.social[k])]).filter((x) => x[1]);
   if (links.length) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.follow'))}</span><ul class="ci__social">${links.map(([n, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a></li>`).join('')}</ul></div>`);
   return rows.join('');
@@ -83,4 +94,24 @@ function leadForm(c, o) {
 <label class="consent"><input type="checkbox" id="f-consent" name="consent" aria-describedby="e-consent"><span>${esc(c.t('form.consent'))}</span></label><p class="err" id="e-consent" role="alert"></p>
 <button class="btn btn--primary" id="submitBtn" type="submit">${esc(c.t('form.submit.inquiry'))}</button><p class="status" id="formStatus" role="status" aria-live="polite"></p></form>`;
 }
-module.exports = { card, cards, agentCard, teams, pillars, contactActions, contactInfo, regionLinks, activeRegions, leadForm, waHref, agentActions, agentPhoto, httpsUrl, SOCIAL_NAMES };
+/* ---- job application form ---- */
+function applyForm(c, o) {
+  o = o || {};
+  const m = JSON.stringify({ name: c.t('form.err.name'), phone: c.t('form.err.phone'), email: c.t('form.err.email'), contact: c.t('form.err.contact'), consent: c.t('form.err.consent'), cvType: c.t('apply.err.cvType'), cvSize: c.t('apply.err.cvSize'), sending: c.t('apply.sending'), sent: c.t('apply.sent'), fail: c.t('apply.fail'), wait: c.t('form.err.wait') });
+  const jobField = o.job
+    ? `<input type="hidden" name="job" value="${esc(o.job.id)}">`
+    : `<div class="field"><label for="a-job">${esc(c.t('apply.job'))}</label><select id="a-job" name="job"><option value="">${esc(c.t('apply.general'))}</option>${c.jobs.map((j) => `<option value="${esc(j.id)}">${esc(j.title)}</option>`).join('')}</select></div>`;
+  return `<form class="form" id="applyForm" novalidate aria-labelledby="apply-title" data-msgs="${esc(m)}">
+<h3 id="apply-title">${esc(o.title || c.t('apply.title'))}</h3>
+${jobField}
+<div class="field"><label for="a-name">${esc(c.t('form.name'))}</label><input id="a-name" name="name" type="text" autocomplete="name" required aria-describedby="ea-name"><p class="err" id="ea-name" role="alert"></p></div>
+<div class="row2"><div class="field"><label for="a-phone">${esc(c.t('form.phone'))}</label><input id="a-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" aria-describedby="ea-phone"><p class="err" id="ea-phone" role="alert"></p></div>
+<div class="field"><label for="a-email">${esc(c.t('form.email'))}</label><input id="a-email" name="email" type="email" autocomplete="email" aria-describedby="ea-email"><p class="err" id="ea-email" role="alert"></p></div></div>
+<p class="err" id="ea-contact" role="alert"></p>
+<div class="field"><label for="a-msg">${esc(c.t('apply.message'))}</label><textarea id="a-msg" name="message" rows="3"></textarea></div>
+<div class="field"><label for="a-cv">${esc(c.t('apply.cv'))}</label><input id="a-cv" name="cv" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-describedby="ea-cv"><small class="note">${esc(c.t('apply.cvHint'))}</small><p class="err" id="ea-cv" role="alert"></p></div>
+<div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+<label class="consent"><input type="checkbox" id="a-consent" name="consent" aria-describedby="ea-consent"><span>${esc(c.t('apply.consent'))}</span></label><p class="err" id="ea-consent" role="alert"></p>
+<button class="btn btn--primary" id="applyBtn" type="submit">${esc(c.t('apply.submit'))}</button><p class="status" id="applyStatus" role="status" aria-live="polite"></p></form>`;
+}
+module.exports = { applyForm, branchItem, branchesBlock, card, cards, agentCard, teams, pillars, contactActions, contactInfo, regionLinks, activeRegions, leadForm, waHref, agentActions, agentPhoto, httpsUrl, SOCIAL_NAMES };

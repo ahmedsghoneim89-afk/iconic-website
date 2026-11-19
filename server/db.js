@@ -5,6 +5,7 @@ const { DatabaseSync } = require('node:sqlite');
 const cfg = require('./config');
 
 fs.mkdirSync(path.join(cfg.dataDir, 'uploads'), { recursive: true });
+fs.mkdirSync(path.join(cfg.dataDir, 'cv'), { recursive: true, mode: 0o700 });
 const db = new DatabaseSync(path.join(cfg.dataDir, 'iconic.db'));
 db.exec(`
 PRAGMA journal_mode = WAL;
@@ -18,7 +19,18 @@ CREATE TABLE IF NOT EXISTS leads (
 CREATE INDEX IF NOT EXISTS leads_created ON leads (created_at DESC);
 CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, pass TEXT NOT NULL, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id INTEGER NOT NULL, csrf TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS applications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, created_at INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'new', job_id TEXT, job_title TEXT,
+  name TEXT NOT NULL, phone TEXT, email TEXT, message TEXT, cv_id TEXT, cv_name TEXT, cv_mime TEXT, cv_bytes INTEGER, lang TEXT, ip_hash TEXT, note TEXT);
+CREATE INDEX IF NOT EXISTS applications_created ON applications (created_at DESC);
 `);
+/* older databases: add the columns that arrived later (existing accounts become admins) */
+function ensureColumn(table, col, ddl) {
+  if (!db.prepare('PRAGMA table_info(' + table + ')').all().some((c) => c.name === col)) db.exec('ALTER TABLE ' + table + ' ADD COLUMN ' + ddl);
+}
+ensureColumn('users', 'role', "role TEXT NOT NULL DEFAULT 'admin'");
+ensureColumn('users', 'name', "name TEXT NOT NULL DEFAULT ''");
+ensureColumn('users', 'last_login', 'last_login INTEGER');
 
 const q = {
   getDoc: db.prepare('SELECT data, updated_at FROM docs WHERE col = ? AND id = ?'),

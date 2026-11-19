@@ -39,7 +39,7 @@ Object.assign(AD.ar, {
 const LEAD_STATUS = ['new', 'contacted', 'viewing', 'closed', 'spam'];
 const fmtWhen = (ms) => { try { return new Date(ms).toLocaleString(App.lang === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' }); } catch (_) { return new Date(ms).toISOString(); } };
 async function refreshLeadCount() {
-  if (!SERVER || !Store.rest) return;
+  if (!SERVER || !Store.rest || !['admin', 'editor'].includes(myRole())) return;
   try { const r = await Store.rest.call('GET', '/leads?limit=1'); AS.newLeads = (r && r.counts && r.counts.new) || 0; if (AS.open) drawChrome(); } catch (_) { /* the count is a convenience */ }
 }
 function leadItem(l, reload) {
@@ -158,7 +158,4 @@ function viewAccount() {
   return h('div', null, sectionHead(ta('ac.title')), f, h('div', { class: 'adm__row' }, out));
 }
 
-if (SERVER) {
-  SECTIONS.splice(0, SECTIONS.length, 'overview', 'leads', 'texts', 'skyline', 'about', 'company', 'teams', 'agents', 'units', 'seo', 'backup', 'account');
-  Object.assign(VIEWS, { leads: viewLeads, seo: viewSeo, account: viewAccount });
-}
+if (SERVER) Object.assign(VIEWS, { leads: viewLeads, seo: viewSeo, account: viewAccount });

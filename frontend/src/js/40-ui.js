@@ -431,6 +431,22 @@ function renderContactInfo() {
   const addr = L(c.address), hrs = L(c.hours);
   if (addr) row(t('contact.address'), addr);
   if (hrs) row(t('contact.hours'), hrs);
+  if (DATA.branches.length) {
+    const d = el('div', 'ci__row ci__branches'), ul = el('ul', 'branches'); d.append(el('span', 'ci__k', t('contact.branches')), ul);
+    DATA.branches.forEach((b) => {
+      const li = el('li', 'branch'), lines = el('p', 'branch__lines'), link = (href, text, ext, ltr) => { const a = el('a', '', text); a.href = href; if (ltr) a.dir = 'ltr'; if (ext) { a.target = '_blank'; a.rel = 'noopener'; } lines.appendChild(a); };
+      li.appendChild(el('h4', 'branch__name', b.name || b.city));
+      if (b.city && b.name) li.appendChild(el('span', 'branch__city', b.city));
+      if (b.address) li.appendChild(el('p', 'branch__addr', b.address));
+      if (b.hours) li.appendChild(el('p', 'branch__hours', b.hours));
+      if (b.phone) link('tel:' + String(b.phone).replace(/[^\d+]/g, ''), b.phone, false, true);
+      if (waNumber(b.whatsapp)) link('https://wa.me/' + waNumber(b.whatsapp), t('contact.whatsapp'), true, true);
+      if (b.map) link(b.map, t('branch.map'), true, false);
+      if (lines.childNodes.length) li.appendChild(lines);
+      ul.appendChild(li);
+    });
+    box.appendChild(d);
+  }
   const links = SOCIALS.map(([k, name]) => [name, httpsUrl((c.social || {})[k])]).filter((x) => x[1]);
   if (links.length) {
     const d = el('div', 'ci__row'), ul = el('ul', 'ci__social'); d.append(el('span', 'ci__k', t('contact.follow')), ul);

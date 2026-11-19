@@ -133,6 +133,11 @@ async function route(req, res) {
     if (!REGION_IDS.includes(seg[2])) return notFound(req, res, lang);
     return sendPage(req, res, cached('region:' + lang + ':' + seg[2], () => ({ html: Pages.regionPage(ctxFor(lang), seg[2]) })));
   }
+  if (seg[1] === 'careers' && seg.length === 2) return sendPage(req, res, cached('careers:' + lang + ':' + new Date().toISOString().slice(0, 10), () => ({ html: Pages.careersPage(ctxFor(lang)) })));
+  if (seg[1] === 'careers' && seg.length === 3) {
+    const job = ctxFor(lang).jobs.find((x) => x.slug === seg[2]); if (!job) return notFound(req, res, lang);
+    return sendPage(req, res, cached('job:' + lang + ':' + job.slug + ':' + new Date().toISOString().slice(0, 10), () => { const c = ctxFor(lang); return { html: Pages.jobPage(c, c.jobs.find((x) => x.slug === job.slug)) }; }));
+  }
   if (seg[1] === 'property' && seg.length === 3) {
     const c = ctxFor(lang); let prop = c.props.find((x) => x.slug === seg[2]);
     if (!prop) { const tail = seg[2].split('-').pop(); const moved = tail && tail.length >= 5 ? c.props.find((x) => x.slug.endsWith('-' + tail)) : null; if (moved) return redirect(res, 301, moved.url); return notFound(req, res, lang); }

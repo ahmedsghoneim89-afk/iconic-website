@@ -1,12 +1,15 @@
 /* ---------- Content store ----------
    The admin dashboard writes company details, teams, agents and units to the artifact database; the site reads them live.
    Where the runtime offers no database (a plain page, or a visitor who is not signed in) none of this runs and the site shows its empty states. */
-const Store = { db: null, user: null, assets: null, downloads: null, canEdit: false, live: false, error: '', raw: { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [] }, off: [] };
+const Store = { db: null, user: null, assets: null, downloads: null, canEdit: false, live: false, error: '', raw: { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [], branches: [], jobs: [] }, off: [] };
 const blobUrl = (id) => id ? '/_blob/' + id : '';
 const refUrl = (r) => r ? (r.id ? blobUrl(r.id) : (r.url || '')) : '';
 const numOrNull = (v) => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
 const orderOf = (r) => { const n = numOrNull(r.order); return n == null ? 100 : n; };
 
+function branchFromDoc(r) {
+  return { id: r.id, get name() { return L(r.name); }, get city() { return L(r.city); }, get address() { return L(r.address); }, get hours() { return L(r.hours); }, phone: r.phone || '', whatsapp: r.whatsapp || '', map: httpsUrl(r.map || '') };
+}
 function teamFromDoc(r) { return { id: r.id, region: r.region, name: r.name || '' }; }
 function agentFromDoc(r) { return { id: r.id, team: r.team, name: r.name || '', role: r.role || '', photo: refUrl(r.photo), phone: r.phone || '', whatsapp: r.whatsapp || '', email: r.email || '' }; }
 function propFromDoc(r) {
@@ -43,6 +46,7 @@ function hydrateData() {
   replaceAll(DATA.teams, R.teams.slice().sort(byOrder).map(teamFromDoc));
   replaceAll(DATA.agents, R.agents.slice().sort(byOrder).map(agentFromDoc));
   replaceAll(DATA.properties, R.properties.slice().sort(byOrder).map(propFromDoc));
+  replaceAll(DATA.branches, R.branches.slice().sort(byOrder).map(branchFromDoc));
   return textsChanged;
 }
 function applyContent() {
@@ -67,7 +71,7 @@ function subscribe(ref, key, single) {
 function seedServerContent() {
   const D = SERVER.data || {};
   ['company', 'texts', 'hotspots', 'about', 'layout'].forEach((k) => { Store.raw[k] = D[k] || null; });
-  ['teams', 'agents', 'properties'].forEach((k) => { Store.raw[k] = Array.isArray(D[k]) ? D[k] : []; });
+  ['teams', 'agents', 'properties', 'branches'].forEach((k) => { Store.raw[k] = Array.isArray(D[k]) ? D[k] : []; });
   Store.live = true; hydrateData();
 }
 async function enableServerAdmin() {
@@ -75,9 +79,9 @@ async function enableServerAdmin() {
     const me = await (await fetch('/iconic-api/me', { credentials: 'same-origin', headers: { Accept: 'application/json' } })).json();
     if (!me || !me.admin) return;
     const rest = restClient(me.csrf);
-    Store.db = rest.db; Store.user = { canEdit: async () => true }; Store.canEdit = true; Store.assets = rest.assets; Store.downloads = rest.downloads; Store.me = me; Store.rest = rest;
+    Store.db = rest.db; Store.user = { canEdit: async () => true }; Store.canEdit = true; Store.assets = rest.assets; Store.downloads = rest.downloads; Store.me = me; Store.rest = rest; applyRoleSections();
     ['company', 'texts', 'hotspots', 'about', 'layout', 'regions'].forEach((k) => subscribe(Store.db.doc('site/' + k), k, true));
-    ['teams', 'agents', 'properties'].forEach((c) => subscribe(Store.db.collection(c), c, false));
+    ['teams', 'agents', 'properties', 'branches', 'jobs'].forEach((c) => subscribe(Store.db.collection(c), c, false));
     initAdminEntry();
   } catch (err) { console.warn('[ICONIC] admin session unavailable:', err); }
 }

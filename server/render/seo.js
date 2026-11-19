@@ -5,6 +5,7 @@ const F = require('./frag');
 
 const root = (lang) => cfg.siteUrl + '/' + lang + '/';
 const urls = {
+  careers: (l) => '/' + l + '/careers', job: (l, slug) => '/' + l + '/careers/' + slug,
   home: (l) => '/' + l + '/', props: (l) => '/' + l + '/properties', region: (l, id) => '/' + l + '/properties/' + id, prop: (l, slug) => '/' + l + '/property/' + slug
 };
 const orgId = () => cfg.siteUrl + '/#organization';
@@ -17,6 +18,7 @@ function orgNode(c) {
     telephone: tel || undefined, email: co.email || undefined,
     address: co.address ? { '@type': 'PostalAddress', streetAddress: co.address, addressCountry: 'EG' } : undefined,
     areaServed: c.REGIONS.map((r) => ({ '@type': 'AdministrativeArea', name: r[c.lang], containedInPlace: { '@type': 'Country', name: c.lang === 'ar' ? 'مصر' : 'Egypt' } })),
+    location: c.branches.length ? c.branches.map((b) => ({ '@type': 'Place', name: b.name || b.city, address: { '@type': 'PostalAddress', streetAddress: b.address || undefined, addressLocality: b.city || undefined, addressCountry: 'EG' }, telephone: String(b.phone || '').replace(/[^\d+]/g, '') || undefined, hasMap: b.map || undefined })) : undefined,
     sameAs: same.length ? same : undefined, availableLanguage: ['ar', 'en']
   };
 }
@@ -34,6 +36,18 @@ function listingNode(c, p) {
     provider: { '@id': orgId() }
   };
 }
+const EMPLOYMENT = { full: 'FULL_TIME', part: 'PART_TIME', contract: 'CONTRACTOR', intern: 'INTERN' };
+function jobNode(c, j) {
+  const para = (t) => String(t || '').split(/\n+/).map((x) => x.trim()).filter(Boolean).map((x) => '<p>' + esc(x) + '</p>').join('');
+  const desc = para(j.description) + (j.requirements ? '<h3>' + esc(c.t('job.req')) + '</h3>' + para(j.requirements) : '');
+  return {
+    '@type': 'JobPosting', '@id': cfg.siteUrl + urls.job(c.lang, j.slug) + '#job', url: cfg.siteUrl + urls.job(c.lang, j.slug), title: j.title, description: desc || esc(j.title),
+    datePosted: j.posted || undefined, validThrough: j.closes || undefined, employmentType: EMPLOYMENT[j.type] || 'FULL_TIME', directApply: true, inLanguage: c.lang === 'ar' ? 'ar-EG' : 'en',
+    hiringOrganization: { '@type': 'Organization', name: cfg.brand, sameAs: cfg.siteUrl + '/', logo: c.abs('/icon-512.png') },
+    jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: j.location || undefined, addressCountry: 'EG' } },
+    identifier: { '@type': 'PropertyValue', name: cfg.brand, value: j.id }
+  };
+}
 const graph = (nodes) => ({ '@context': 'https://schema.org', '@graph': nodes.filter(Boolean) });
 
 /* ---- sitemap: only pages that have real content, each with its language alternates ---- */
@@ -46,6 +60,10 @@ function entries(c0, ctxFor) {
     const ps = cs.en.props.filter((p) => p.region === r.id); if (!ps.length) return;
     out.push({ alt: alt((l) => urls.region(l, r.id)), lastmod: Math.max(...ps.map((p) => p.updatedAt)) });
   });
+  if (cs.en.jobs.length) {
+    const lm = Math.max(...cs.en.jobs.map((j) => j.updatedAt));
+    out.push({ alt: alt(urls.careers), lastmod: lm }); cs.en.jobs.forEach((j) => out.push({ alt: alt((l) => urls.job(l, j.slug)), lastmod: j.updatedAt }));
+  }
   cs.en.props.forEach((p) => out.push({ alt: alt((l) => urls.prop(l, p.slug)), lastmod: p.updatedAt, images: p.images.map(cs.en.abs), title: p.title }));
   return out;
 }
@@ -63,4 +81,4 @@ function robots() {
 }
 const manifest = (lang) => ({ name: cfg.brand, short_name: 'ICONIC', start_url: '/' + lang + '/', scope: '/', display: 'standalone', background_color: '#050507', theme_color: '#050507', lang, dir: lang === 'ar' ? 'rtl' : 'ltr', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 
-module.exports = { urls, orgNode, siteNode, crumbs, listingNode, graph, sitemap, robots, manifest, root };
+module.exports = { urls, jobNode, orgNode, siteNode, crumbs, listingNode, graph, sitemap, robots, manifest, root };

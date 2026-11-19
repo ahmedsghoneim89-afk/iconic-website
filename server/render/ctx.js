@@ -3,7 +3,7 @@
 const I = require('../i18n.json');
 const cfg = require('../config');
 
-const REGIONS = I.regions, TYPES = I.types, PURPOSES = I.purposes;
+const REGIONS = I.regions, TYPES = I.types, PURPOSES = I.purposes, JOB_TYPES = I.jobTypes;
 const clip = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); if (s.length <= n) return s; const cut = s.slice(0, n - 1); return cut.slice(0, Math.max(cut.lastIndexOf(' '), n * 0.6)).replace(/[,.;:،\-–—\s]+$/, '') + '…'; };
 
 function make(lang, snap) {
@@ -18,7 +18,7 @@ function make(lang, snap) {
   const L = (v) => (v && typeof v === 'object') ? (v[lang] || v.en || v.ar || '') : (v == null ? '' : String(v));
   const regionName = (id) => { const r = REGIONS.find((x) => x.id === id); return r ? r[lang] : ''; };
   const keyLabel = (list, k) => { const f = list.find((x) => x[0] === k); return f ? f[1][lang] : (k || ''); };
-  const typeLabel = (k) => keyLabel(TYPES, k), purposeLabel = (k) => keyLabel(PURPOSES, k);
+  const typeLabel = (k) => keyLabel(TYPES, k), purposeLabel = (k) => keyLabel(PURPOSES, k), jobTypeLabel = (k) => keyLabel(JOB_TYPES, k);
   const priceText = (p) => {
     if (p.price == null) return t('prop.price.none');
     try { return p.currency ? new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', { style: 'currency', currency: p.currency, maximumFractionDigits: 0 }).format(p.price) : fmtNum(p.price); } catch (_) { return fmtNum(p.price); }
@@ -46,7 +46,13 @@ function make(lang, snap) {
     };
   }).filter((p) => p.slug);
 
-  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, typeLabel, purposeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
+  const branches = (raw.branches || []).map((b) => ({ id: b.id, name: L(b.name), city: L(b.city), address: L(b.address), phone: b.phone || '', whatsapp: b.whatsapp || '', hours: L(b.hours), map: /^https:\/\/\S+$/i.test(b.map || '') ? b.map : '' })).filter((b) => b.name || b.address);
+  const today = new Date().toISOString().slice(0, 10);
+  const jobs = (raw.jobs || []).filter((j) => j.active !== false && j.slug && !(j.closes && j.closes < today)).map((j) => ({
+    id: j.id, slug: j.slug, url: '/' + lang + '/careers/' + j.slug, title: L(j.title), department: L(j.department), location: L(j.location), type: j.type || 'full', typeLabel: jobTypeLabel(j.type || 'full'),
+    description: L(j.description), requirements: L(j.requirements), posted: j.posted || '', closes: j.closes || '', updatedAt: j._u || 0
+  })).filter((j) => j.title);
+  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, branches, jobs, today, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
 }
 
 const waNumber = (v) => { let n = String(v || '').replace(/\D/g, ''); if (/^01\d{9}$/.test(n)) n = '20' + n.slice(1); return n; };

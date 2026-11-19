@@ -1,7 +1,7 @@
 'use strict';
 /* Strict shapes for everything the dashboard can store. Unknown fields are dropped, wrong types are refused. */
 const I = require('./i18n.json');
-const REGION_IDS = I.regions.map((r) => r.id), TYPE_IDS = I.types.map((x) => x[0]), PURPOSE_IDS = I.purposes.map((x) => x[0]);
+const REGION_IDS = I.regions.map((r) => r.id), TYPE_IDS = I.types.map((x) => x[0]), PURPOSE_IDS = I.purposes.map((x) => x[0]), JOB_TYPE_IDS = I.jobTypes.map((x) => x[0]);
 const CURRENCIES = ['EGP', 'USD', 'EUR', 'GBP', 'AED', 'SAR'];
 const SOCIALS = ['instagram', 'facebook', 'linkedin', 'youtube', 'tiktok', 'x'];
 const fail = (m) => { const e = new Error(m); e.status = 400; throw e; };
@@ -62,7 +62,17 @@ const SITE = {
   layout: obj({ teams: bool, about: bool }),
   regions
 };
+const isoDate = (v) => { const s = S(10)(v); if (s && !/^\d{4}-\d{2}-\d{2}$/.test(s)) fail('date expected'); return s; };
+const hasText = (b) => !!(b && (b.en || b.ar));
 const COLLECTIONS = {
+  branches: (v) => {
+    const o = obj({ name: bi(120), city: bi(80), address: bi(400), phone: S(30), whatsapp: S(30), hours: bi(200), map: httpsUrl(500), order: num(-9999, 9999) })(v);
+    if (!hasText(o.name) && !hasText(o.address)) fail('name or address required'); return o;
+  },
+  jobs: (v) => {
+    const o = obj({ title: bi(140), department: bi(100), location: bi(160), type: oneOf(JOB_TYPE_IDS, true), description: bi(6000), requirements: bi(4000), active: bool, closes: isoDate, order: num(-9999, 9999) })(v);
+    if (!hasText(o.title)) fail('title required'); if (!o.type) o.type = 'full'; if (o.active === undefined) o.active = true; return o;
+  },
   teams: (v) => { const o = obj({ region: oneOf(REGION_IDS), name: bi(120), order: num(-9999, 9999) })(v); if (!o.region) fail('region required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
   agents: (v) => { const o = obj({ team: S(80), name: bi(120), role: bi(120), photo: img, whatsapp: S(30), phone: S(30), email, order: num(-9999, 9999) })(v); if (!o.team) fail('team required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
   properties: (v) => {
@@ -80,4 +90,4 @@ function validate(col, id, data) {
 }
 const readable = (col, id) => (col === 'site' ? (id == null || !!SITE[id]) : !!COLLECTIONS[col]);
 
-module.exports = { validate, readable, fail, REGION_IDS, TYPE_IDS, PURPOSE_IDS, CURRENCIES, SOCIALS, S, ID };
+module.exports = { validate, readable, fail, REGION_IDS, TYPE_IDS, PURPOSE_IDS, JOB_TYPE_IDS, CURRENCIES, SOCIALS, S, ID };
