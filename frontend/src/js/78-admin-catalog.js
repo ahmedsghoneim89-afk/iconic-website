@@ -32,7 +32,8 @@ Object.assign(AD.en, {
   'ct.s.units': 'Units and projects', 'ct.s.unitsHint': 'A unit that only has a project name can be matched to the CRM project with the same name. Only exact, single matches are linked. Nothing else on the unit changes.',
   'ct.s.unitsNow': '{linked} of {total} units are linked to a CRM project.', 'ct.s.preview': 'Preview the matches', 'ct.s.apply': 'Link {n} unit(s)', 'ct.s.applied': '{n} unit(s) linked', 'ct.s.working': 'Working…',
   'ct.r.linked': 'Will be linked', 'ct.r.ambiguous': 'Needs a decision (more than one project has this name)', 'ct.r.missing': 'No project with this name in the CRM', 'ct.r.broken': 'Linked project no longer exists in the CRM', 'ct.r.nothing': 'Nothing to link.', 'ct.r.noText': '{n} unit(s) have no project name.',
-  'ct.u.project': 'Project from the CRM', 'ct.u.hint': 'Developer, area and region follow the project. Leave empty for a unit with no project.', 'ct.u.none': 'Not linked', 'ct.u.loading': 'The project list is still loading. Close this form and open it again in a moment.', 'ct.u.followed': 'The region and location come from the project.'
+  'ct.u.project': 'Project from the CRM', 'ct.u.hint': 'Pick a developer, governorate or area to narrow the projects. The unit follows its project: developer, governorate, area and region all come from it. Leave the project empty for a unit with no project.',
+  'ct.u.developer': 'Developer', 'ct.u.city': 'Governorate', 'ct.u.area': 'Area', 'ct.u.all': 'All', 'ct.u.cleared': 'The project was cleared because it is not in the choices you made. Pick another project.', 'ct.u.none': 'Not linked', 'ct.u.loading': 'The project list is still loading. Close this form and open it again in a moment.', 'ct.u.followed': 'The region and location come from the project.'
 });
 Object.assign(AD.ar, {
   'nav.catalog': 'الكتالوج',
@@ -65,7 +66,8 @@ Object.assign(AD.ar, {
   'ct.s.units': 'الوحدات والمشاريع', 'ct.s.unitsHint': 'الوحدة التي لها اسم مشروع فقط يمكن مطابقتها مع مشروع النظام بنفس الاسم. تُربط المطابقات الدقيقة والمفردة فقط، ولا يتغير أي شيء آخر في الوحدة.',
   'ct.s.unitsNow': '{linked} من {total} وحدة مرتبطة بمشروع في النظام.', 'ct.s.preview': 'معاينة المطابقات', 'ct.s.apply': 'ربط {n} وحدة', 'ct.s.applied': 'تم ربط {n} وحدة', 'ct.s.working': 'جارٍ العمل…',
   'ct.r.linked': 'سيتم ربطها', 'ct.r.ambiguous': 'تحتاج قرارًا (أكثر من مشروع بنفس الاسم)', 'ct.r.missing': 'لا يوجد مشروع بهذا الاسم في النظام', 'ct.r.broken': 'المشروع المرتبط لم يعد موجودًا في النظام', 'ct.r.nothing': 'لا يوجد ما يُربط.', 'ct.r.noText': '{n} وحدة بلا اسم مشروع.',
-  'ct.u.project': 'المشروع من النظام', 'ct.u.hint': 'المطور والمنطقة والإقليم تتبع المشروع. اتركه فارغًا لوحدة بلا مشروع.', 'ct.u.none': 'غير مرتبطة', 'ct.u.loading': 'قائمة المشاريع ما زالت تُحمَّل. أغلق هذا النموذج وافتحه بعد لحظات.', 'ct.u.followed': 'الإقليم والموقع يأتيان من المشروع.'
+  'ct.u.project': 'المشروع من النظام', 'ct.u.hint': 'اختر مطورًا أو محافظة أو منطقة لتضييق قائمة المشاريع. الوحدة تتبع مشروعها: المطور والمحافظة والمنطقة والإقليم كلها تأتي منه. اترك المشروع فارغًا لوحدة بلا مشروع.',
+  'ct.u.developer': 'المطور', 'ct.u.city': 'المحافظة', 'ct.u.area': 'المنطقة', 'ct.u.all': 'الكل', 'ct.u.cleared': 'تم إلغاء المشروع لأنه لا يطابق اختياراتك. اختر مشروعًا آخر.', 'ct.u.none': 'غير مرتبطة', 'ct.u.loading': 'قائمة المشاريع ما زالت تُحمَّل. أغلق هذا النموذج وافتحه بعد لحظات.', 'ct.u.followed': 'الإقليم والموقع يأتيان من المشروع.'
 });
 if (SERVER) { [ROLE_SECTIONS.admin, ROLE_SECTIONS.editor].forEach((a) => { const i = a.indexOf('units'); a.splice(i < 0 ? a.length : i, 0, 'catalog'); }); }
 
@@ -300,19 +302,66 @@ function ctUnits() {
       rep.totals.noProjectText ? h('p', { class: 'note', text: ta('ct.r.noText', { n: fmtNum(rep.totals.noProjectText) }) }) : null) : null);
 }
 
-/* ---------- the project field on the unit form ---------- */
+/* ---------- the project field on the unit form ----------
+   Developer, governorate, area and project are linked lists built from the CRM. Each one offers only what fits the others:
+   a governorate offers its own areas, a developer its own projects. Choosing a project fills in the rest. */
+function ctLink(rows, sel) {
+  const keep = (skip) => rows.filter((x) => ['d', 'c', 'a', 'p'].every((k) => skip.includes(k) || !sel[k] || x[k] === sel[k]));
+  const ids = (list, k) => new Set(list.map((x) => x[k]).filter(Boolean));
+  return { d: ids(keep('dp'), 'd'), c: ids(keep('cap'), 'c'), a: ids(keep('ap'), 'a'), p: ids(keep('p'), 'p') };
+}
 function catalogProjectField(r) {
   const D = CT.data;
   if (!D) return h('div', { class: 'af' }, h('label', { class: 'af__l', text: ta('ct.u.project') }), h('small', { class: 'af__h', text: ta('ct.u.loading') }));
-  const sel = select('projectId', D.projects.filter((p) => p.active !== false || (r && r.projectId === p.id)).map((p) => [p.id, p.name + (ctDevName(p.developerId) ? ' — ' + ctDevName(p.developerId) : '') + (p.active === false ? ' (' + ta('ct.inactive') + ')' : '')]), r && r.projectId || '', { blank: ta('ct.u.none') });
+  const rows = D.projects.filter((p) => p.active !== false || (r && r.projectId === p.id)).map((p) => ({ d: p.developerId || '', c: p.cityId || '', a: p.areaId || '', p: p.id }));
+  const byName = (a, b) => String(a.name).localeCompare(String(b.name), App.lang);
+  const used = (k) => new Set(rows.map((x) => x[k]));
+  const pool = { d: D.developers.filter((x) => used('d').has(x.id)).sort(byName), c: D.cities.filter((x) => used('c').has(x.id)).sort(byName), a: D.areas.filter((x) => used('a').has(x.id)).sort(byName), p: D.projects.filter((x) => used('p').has(x.id)).sort(byName) };
+  const sels = { d: select('x_developer', [], '', { blank: ta('ct.u.all') }), c: select('x_city', [], '', { blank: ta('ct.u.all') }), a: select('x_area', [], '', { blank: ta('ct.u.all') }), p: select('projectId', [], '', { blank: ta('ct.u.none') }) };
   const note = h('small', { class: 'af__h', text: ta('ct.u.hint') });
-  const sync = () => {
-    const f = sel.form; if (!f) return;
-    const pj = sel.value ? catalogProject(sel.value) : null, region = pj ? catalogRegion(pj) : '';
-    const reg = f.elements.region; if (reg) { if (region) reg.value = region; reg.disabled = !!region; }
-    const txt = f.querySelector('[name=project_en]'); const w = txt && txt.closest('.af'); if (w) w.hidden = !!pj;
-    note.textContent = pj ? ta('ct.u.followed') : ta('ct.u.hint');
+  const label = (k, x, sel) => {
+    if (k === 'a') return sel.c ? x.name : x.name + ' — ' + ((ctBy('city', x.cityId) || {}).name || '');
+    if (k === 'p') { const dn = ctDevName(x.developerId); return x.name + (!sel.d && dn ? ' — ' + dn : '') + (x.active === false ? ' (' + ta('ct.inactive') + ')' : ''); }
+    return x.name;
   };
-  sel.addEventListener('change', sync); setTimeout(sync, 0);
-  return fieldWrap(ta('ct.u.project'), sel, null, note);
+  const fill = (k, ok, sel) => {
+    const s = sels[k], blank = s.options[0].text; s.textContent = ''; s.append(h('option', { value: '', text: blank }));
+    pool[k].filter((x) => ok.has(x.id)).forEach((x) => s.append(h('option', { value: x.id, text: label(k, x, sel) })));
+    s.value = sel[k]; if (s.value !== sel[k]) s.value = '';
+  };
+  const read = () => ({ d: sels.d.value, c: sels.c.value, a: sels.a.value, p: sels.p.value });
+  let first = true, autoRegion = '';
+  const refresh = (changed) => {
+    const sel = read(), had = sel.p; let L;
+    /* a project or an area fixes where it is */
+    if (changed === 'p' && sel.p) { const x = rows.find((y) => y.p === sel.p); if (x) { sel.d = x.d; sel.c = x.c; sel.a = x.a; } }
+    else if (changed === 'a' && sel.a) { const a = ctBy('area', sel.a); if (a) sel.c = a.cityId; }
+    /* a project stands for its own developer, governorate and area: changing one of them (even to "All") lets go of the project */
+    if (['d', 'c', 'a'].includes(changed) && sel.p) { const x = rows.find((y) => y.p === sel.p); if (!x || x[changed] !== sel[changed]) sel.p = ''; }
+    /* what no longer fits goes back to "All": the project first, then the area, the developer, the governorate. The list just changed is never touched. */
+    ['p', 'a', 'd', 'c'].forEach((k) => { if (k !== changed && sel[k] && !ctLink(rows, sel)[k].has(sel[k])) sel[k] = ''; });
+    L = ctLink(rows, sel);
+    ['d', 'c', 'a', 'p'].forEach((k) => fill(k, L[k], sel));
+    note.textContent = !first && had && !sel.p && changed !== 'p' ? ta('ct.u.cleared') : ta('ct.u.hint');
+    sync();
+  };
+  const sync = () => {
+    const f = sels.p.form; if (!f) return;
+    const pj = sels.p.value ? catalogProject(sels.p.value) : null, ct = sels.c.value ? catalogCity(sels.c.value) : null;
+    const region = pj ? catalogRegion(pj) : (ct && ct.region) || '';
+    /* the region follows the project; with only a governorate it follows that, until the person picks a region by hand */
+    const reg = f.elements.region; if (reg) { if (pj) { if (region) { reg.value = region; autoRegion = region; } reg.disabled = !!region; } else { reg.disabled = false; if (region && (!reg.value || reg.value === autoRegion)) { reg.value = region; autoRegion = region; } } }
+    const txt = f.querySelector('[name=project_en]'); const w = txt && txt.closest('.af'); if (w) w.hidden = !!pj;
+    if (pj) note.textContent = ta('ct.u.followed');
+  };
+  /* start from the unit's own project, if it has one */
+  const startSel = r && r.projectId && rows.some((x) => x.p === r.projectId) ? { d: '', c: '', a: '', p: r.projectId } : { d: '', c: '', a: '', p: '' };
+  fill('p', new Set(rows.map((x) => x.p)), startSel);
+  refresh(startSel.p ? 'p' : '');
+  first = false;
+  ['d', 'c', 'a', 'p'].forEach((k) => sels[k].addEventListener('change', () => refresh(k)));
+  setTimeout(sync, 0);
+  return h('div', { class: 'af-group' },
+    h('div', { class: 'af__row' }, fieldWrap(ta('ct.u.developer'), sels.d), fieldWrap(ta('ct.u.city'), sels.c), fieldWrap(ta('ct.u.area'), sels.a)),
+    fieldWrap(ta('ct.u.project'), sels.p, null, note));
 }

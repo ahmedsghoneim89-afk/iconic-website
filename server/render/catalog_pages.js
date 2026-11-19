@@ -38,44 +38,83 @@ const metaRow = (c, rows) => { const r = rows.filter((x) => x[1]); return r.leng
 const link = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
 const regionLink = (c, id) => (id ? link('/' + c.lang + '/properties/' + id, c.regionName(id)) : '');
 
-/* ---------- filters: plain links and a GET form, so they work without scripts and can be shared ---------- */
+/* ---------- filters: a GET form with linked drop-down lists, so it works without scripts and a result can be shared ----------
+   One row per project that can be chosen: [developer, governorate, area, project, weight]. The lists narrow each other the way
+   the data is linked: a governorate offers only its areas, a developer only its projects. page.js applies the same rules while
+   someone is choosing; here they decide what the page offers after the form is sent. */
+const BEDS = [1, 2, 3, 4, 5];
 function resolveFilters(c, sp) {
   const get = (k) => String((sp && sp.get && sp.get(k)) || '').slice(0, 120);
   const K = c.catalog;
   const find = (arr, slug) => (slug ? arr.find((x) => x.slug === slug) || null : null);
   const f = { developer: find(K.developers, get('developer')), project: find(K.projects, get('project')), area: find(K.areas, get('area')), city: find(K.cities, get('city')) };
-  f.active = !!(f.developer || f.project || f.area || f.city);
+  /* a project or an area already says where it is, so the other choices follow it */
+  if (f.project) { f.developer = f.project.developer || null; f.city = f.project.city; f.area = f.project.area || null; }
+  else if (f.area) f.city = f.area.city;
+  const type = get('type'), purpose = get('purpose'), beds = parseInt(get('beds'), 10);
+  f.type = c.TYPES.some((x) => x[0] === type) ? type : '';
+  f.purpose = c.PURPOSES.some((x) => x[0] === purpose) ? purpose : '';
+  f.beds = beds >= 1 && beds <= 9 ? beds : 0;
+  f.active = !!(f.developer || f.project || f.area || f.city || f.type || f.purpose || f.beds);
   return f;
 }
-function select(c, name, label, groups, current) {
-  const opt = (o) => `<option value="${esc(o.slug)}"${current && current.slug === o.slug ? ' selected' : ''}>${esc(o.name)}</option>`;
+const cascadeRows = (projects, weight) => projects.map((p) => ({ d: p.developer ? p.developer.slug : '', c: p.city.slug, a: p.area ? p.area.slug : '', p: p.slug, u: weight(p) }));
+/* what each list offers for the current choices, with how many units (or projects) are behind every entry */
+function cascade(rows, sel) {
+  const keep = (skip) => rows.filter((r) => ['d', 'c', 'a', 'p'].every((k) => skip.includes(k) || !sel[k] || r[k] === sel[k]));
+  const tally = (list, k) => { const m = new Map(); list.forEach((r) => { if (r[k]) m.set(r[k], (m.get(r[k]) || 0) + r.u); }); return m; };
+  return { d: tally(keep('dp'), 'd'), c: tally(keep('cap'), 'c'), a: tally(keep('ap'), 'a'), p: tally(keep('p'), 'p') };
+}
+function select(c, name, label, groups, current, count) {
+  const opt = (o) => `<option value="${esc(o.slug)}"${current && current.slug === o.slug ? ' selected' : ''}>${esc(o.name)}${count && count.get(o.slug) > 0 ? ` (${esc(c.fmtNum(count.get(o.slug)))})` : ''}</option>`;
   const body = groups.map((g) => (g.label ? `<optgroup label="${esc(g.label)}">${g.items.map(opt).join('')}</optgroup>` : g.items.map(opt).join(''))).join('');
   return `<label class="flt__f"><span>${esc(label)}</span><select name="${name}"><option value="">${esc(c.t('flt.all'))}</option>${body}</select></label>`;
 }
-function filterForm(c, basePath, f, pick) {
-  const K = c.catalog, flat = (items) => [{ items }];
-  const byCity = (items) => K.cities.map((ct) => ({ label: ct.name, items: items.filter((a) => a.cityId === ct.id) })).filter((g) => g.items.length);
-  const fields = [];
-  if (pick.developer) fields.push(select(c, 'developer', c.t('flt.developer'), flat(pick.developer), f.developer));
-  if (pick.project) fields.push(select(c, 'project', c.t('flt.project'), flat(pick.project), f.project));
-  if (pick.city) fields.push(select(c, 'city', c.t('flt.city'), flat(pick.city), f.city));
-  if (pick.area) fields.push(select(c, 'area', c.t('flt.area'), byCity(pick.area), f.area));
-  if (!fields.length) return '';
-  return `<form class="flt" method="get" action="${esc(basePath)}" aria-label="${esc(c.t('flt.title'))}">${fields.join('')}<div class="flt__go"><button class="btn btn--small btn--primary" type="submit">${esc(c.t('flt.apply'))}</button>${f.active ? `<a class="btn btn--small" href="${esc(basePath)}">${esc(c.t('flt.reset'))}</a>` : ''}</div></form>`;
+/* a plain list of fixed choices (type, purpose, bedrooms) */
+function simpleSelect(c, name, label, options, current) {
+  return `<label class="flt__f"><span>${esc(label)}</span><select name="${name}"><option value="">${esc(c.t('flt.all'))}</option>${options.map(([v, l]) => `<option value="${esc(v)}"${String(current) === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
 }
-/* the filter menus offer only choices that lead somewhere */
-function unitChoices(c) {
-  const K = c.catalog, has = (key) => new Set(c.props.map((p) => p[key]).filter(Boolean));
-  const pj = has('projectId'), dv = has('developerId'), ar = has('areaId'), ct = has('cityId');
-  return { developer: K.developers.filter((d) => dv.has(d.id)), project: K.projects.filter((p) => pj.has(p.id)), city: K.cities.filter((x) => ct.has(x.id)), area: K.areas.filter((a) => ar.has(a.id)) };
+/* opts.rows: the projects to choose from; opts.project: offer a project list; opts.units: offer type, purpose and bedrooms */
+function filterForm(c, basePath, f, opts) {
+  const K = c.catalog, rows = opts.rows || [], sel = { d: f.developer ? f.developer.slug : '', c: f.city ? f.city.slug : '', a: f.area ? f.area.slug : '', p: f.project ? f.project.slug : '' };
+  const fields = [];
+  let tree = '';
+  if (rows.length) {
+    const lists = cascade(rows, sel);
+    /* whatever is chosen stays visible even when a shared link names a combination the lists would not offer */
+    const offered = (all, k, cur) => all.filter((x) => lists[k].has(x.slug) || (cur && cur.slug === x.slug));
+    const devs = offered(K.developers, 'd', f.developer), cities = offered(K.cities, 'c', f.city), areas = offered(K.areas, 'a', f.area), projs = opts.project ? offered(K.projects, 'p', f.project) : [];
+    const areaGroups = f.city ? [{ items: areas }] : K.cities.map((ct) => ({ label: ct.name, items: areas.filter((a) => a.cityId === ct.id) })).filter((g) => g.items.length);
+    if (cities.length) fields.push(select(c, 'city', c.t('flt.city'), [{ items: cities }], f.city, lists.c));
+    if (areas.length) fields.push(select(c, 'area', c.t('flt.area'), areaGroups, f.area, lists.a));
+    if (devs.length) fields.push(select(c, 'developer', c.t('flt.developer'), [{ items: devs }], f.developer, lists.d));
+    if (projs.length) fields.push(select(c, 'project', c.t('flt.project'), [{ items: projs }], f.project, lists.p));
+    /* everything page.js needs to keep the lists linked without another request */
+    const inRows = (k) => new Set(rows.map((r) => r[k]));
+    const dv = inRows('d'), ct = inRows('c'), ar = inRows('a'), pj = inRows('p');
+    tree = JSON.stringify({
+      r: rows.map((r) => [r.d, r.c, r.a, r.p, r.u]), d: K.developers.filter((x) => dv.has(x.slug)).map((x) => [x.slug, x.name]), c: K.cities.filter((x) => ct.has(x.slug)).map((x) => [x.slug, x.name]),
+      a: K.areas.filter((x) => ar.has(x.slug)).map((x) => [x.slug, x.name, x.city.slug]), p: opts.project ? K.projects.filter((x) => pj.has(x.slug)).map((x) => [x.slug, x.name]) : [], n: c.lang === 'ar' ? 'ar-EG' : 'en-US'
+    });
+  }
+  if (opts.units) {
+    fields.push(simpleSelect(c, 'type', c.t('flt.type'), c.TYPES.map((x) => [x[0], x[1][c.lang]]), f.type));
+    fields.push(simpleSelect(c, 'purpose', c.t('flt.purpose'), c.PURPOSES.map((x) => [x[0], x[1][c.lang]]), f.purpose));
+    fields.push(simpleSelect(c, 'beds', c.t('flt.beds'), BEDS.map((n) => [n, c.fmtNum(n) + '+']), f.beds || ''));
+  }
+  if (!fields.length) return '';
+  return `<form class="flt" method="get" action="${esc(basePath)}" aria-label="${esc(c.t('flt.title'))}"${tree ? ` data-tree="${esc(tree)}"` : ''}>${fields.join('')}<div class="flt__go"><button class="btn btn--small btn--primary" type="submit">${esc(c.t('flt.apply'))}</button>${f.active ? `<a class="btn btn--small" href="${esc(basePath)}">${esc(c.t('flt.reset'))}</a>` : ''}</div></form>`;
 }
 function filterUnits(c, f) {
-  return c.props.filter((p) => (!f.developer || p.developerId === f.developer.id) && (!f.project || p.projectId === f.project.id) && (!f.area || p.areaId === f.area.id) && (!f.city || p.cityId === f.city.id));
+  return c.props.filter((p) => (!f.developer || p.developerId === f.developer.id) && (!f.project || p.projectId === f.project.id) && (!f.area || p.areaId === f.area.id) && (!f.city || p.cityId === f.city.id)
+    && (!f.type || p.type === f.type) && (!f.purpose || p.purpose === f.purpose) && (!f.beds || (p.beds != null && p.beds >= f.beds)));
 }
-/* the properties page, with the catalog filters; used by pages.propertiesPage when the catalog has anything to filter by */
+/* the properties page, with the catalog filters; the lists come from the CRM projects, with the number of units in each */
 function unitFilterBlock(c, f) {
-  const pick = unitChoices(c); if (!pick.developer.length && !pick.project.length && !pick.area.length) return '';
-  return filterForm(c, '/' + c.lang + '/properties', f, pick);
+  const K = c.catalog, count = new Map();
+  c.props.forEach((p) => { if (p.projectId) count.set(p.projectId, (count.get(p.projectId) || 0) + 1); });
+  const rows = cascadeRows(K.projects.filter((p) => p.active || count.has(p.id)), (p) => count.get(p.id) || 0);
+  return filterForm(c, '/' + c.lang + '/properties', f, { rows, project: true, units: true });
 }
 
 /* ---------- developers ---------- */
@@ -102,9 +141,8 @@ ${section('du-h', c.t('pg.dev.units', { name: d.name }), units.length ? `<p clas
 /* ---------- projects ---------- */
 function projectsPage(c, f) {
   const l = c.lang, K = c.catalog, path = (x) => S.urls.projects(x);
-  const devs = K.developers.filter((d) => projectsOfDeveloper(c, d).length), cities = K.cities.filter((x) => K.shownProjects.some((p) => p.city.id === x.id)), areas = K.areas.filter((a) => projectsOfArea(c, a).length);
   const list = K.shownProjects.filter((p) => (!f.developer || (p.developer && p.developer.id === f.developer.id)) && (!f.area || (p.area && p.area.id === f.area.id)) && (!f.city || p.city.id === f.city.id));
-  const form = K.shownProjects.length ? filterForm(c, '/' + l + '/projects', f, { developer: devs, city: cities, area: areas }) : '';
+  const form = K.shownProjects.length ? filterForm(c, '/' + l + '/projects', f, { rows: cascadeRows(K.shownProjects, () => 1), project: false, units: false }) : '';
   const body = `<div class="wrap pg__wrap">${crumbsHtml(c, [home(c), [c.t('pg.proj.title')]])}
 <header class="pg__head"><h1 class="h2">${esc(c.t('pg.proj.title'))}</h1><p class="lede">${esc(c.t('pg.proj.lede'))}</p></header>${form}
 ${!K.shownProjects.length ? emptyBlock(c.t('pg.proj.empty.title'), c.t('pg.proj.empty.body'))

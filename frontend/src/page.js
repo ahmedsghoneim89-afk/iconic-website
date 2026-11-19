@@ -109,4 +109,53 @@
         .catch(function () { ls.dataset.state = 'error'; ls.textContent = L.fail; b.disabled = false; });
     });
   }
+  /* Linked drop-down lists on the properties and projects filters: a governorate offers only its areas, a developer only its projects.
+     The same rules are applied by the server (catalog_pages.js, cascade) when the page is built, so both agree. */
+  var flt = d.querySelector('form.flt[data-tree]');
+  if (flt) {
+    var T = null; try { T = JSON.parse(flt.getAttribute('data-tree')); } catch (e) { T = null; }
+    if (T && T.r) {
+      var KEYS = ['d', 'c', 'a', 'p'], ROW = { d: 0, c: 1, a: 2, p: 3 }, SELS = {};
+      var NAMES = { d: {}, c: {}, a: {}, p: {} }, ORDER = { d: T.d, c: T.c, a: T.a, p: T.p };
+      KEYS.forEach(function (k) { (ORDER[k] || []).forEach(function (x) { NAMES[k][x[0]] = x[1]; }); });
+      var AREA_CITY = {}; (T.a || []).forEach(function (x) { AREA_CITY[x[0]] = x[2]; });
+      var cityOrder = (T.c || []).map(function (x) { return x[0]; });
+      SELS.d = flt.elements.developer; SELS.c = flt.elements.city; SELS.a = flt.elements.area; SELS.p = flt.elements.project;
+      var nf; try { nf = new Intl.NumberFormat(T.n || undefined); } catch (e) { nf = { format: String }; }
+      var blank = {}; KEYS.forEach(function (k) { if (SELS[k]) blank[k] = SELS[k].options[0].text; });
+      var cur = function () { var o = {}; KEYS.forEach(function (k) { o[k] = SELS[k] ? SELS[k].value : ''; }); return o; };
+      var keep = function (sel, skip) {
+        return T.r.filter(function (r) { return KEYS.every(function (k) { return skip.indexOf(k) >= 0 || !sel[k] || r[ROW[k]] === sel[k]; }); });
+      };
+      var tally = function (list, k) { var m = {}, ks = []; list.forEach(function (r) { var v = r[ROW[k]]; if (!v) return; if (!(v in m)) { m[v] = 0; ks.push(v); } m[v] += r[4]; }); return { n: m, has: function (v) { return v in m; } }; };
+      var lists = function (sel) { return { d: tally(keep(sel, 'dp'), 'd'), c: tally(keep(sel, 'cap'), 'c'), a: tally(keep(sel, 'ap'), 'a'), p: tally(keep(sel, 'p'), 'p') }; };
+      var opt = function (v, k, L) { var o = d.createElement('option'); o.value = v; o.textContent = NAMES[k][v] + (L.n[v] > 0 ? ' (' + nf.format(L.n[v]) + ')' : ''); return o; };
+      var fill = function (k, L, value) {
+        var s = SELS[k]; if (!s) return;
+        s.textContent = ''; var all = d.createElement('option'); all.value = ''; all.textContent = blank[k]; s.appendChild(all);
+        var ok = function (x) { return L.has(x[0]); };
+        if (k === 'a' && !(SELS.c && SELS.c.value)) {
+          cityOrder.forEach(function (cv) {
+            var items = T.a.filter(function (x) { return x[2] === cv && ok(x); }); if (!items.length) return;
+            var g = d.createElement('optgroup'); g.label = NAMES.c[cv]; items.forEach(function (x) { g.appendChild(opt(x[0], 'a', L)); }); s.appendChild(g);
+          });
+        } else (ORDER[k] || []).filter(ok).forEach(function (x) { s.appendChild(opt(x[0], k, L)); });
+        s.value = value; if (s.value !== value) s.value = '';
+      };
+      var refresh = function (changed) {
+        var sel = cur(), L;
+        /* choosing a project or an area fixes where it is */
+        if (changed === 'p' && sel.p) { var row = T.r.filter(function (r) { return r[3] === sel.p; })[0]; if (row) { sel.d = row[0]; sel.c = row[1]; sel.a = row[2]; } }
+        else if (changed === 'a' && sel.a && AREA_CITY[sel.a]) sel.c = AREA_CITY[sel.a];
+        /* a project stands for its own developer, governorate and area: changing one of them (even to "All") lets go of the project */
+        if (changed !== 'p' && ROW[changed] !== undefined && sel.p) { var pr = T.r.filter(function (r) { return r[3] === sel.p; })[0]; if (!pr || pr[ROW[changed]] !== sel[changed]) sel.p = ''; }
+        /* what no longer fits goes back to "All": the project first, then the area, then the developer, then the governorate.
+           The list the person just changed is never touched, so changing the governorate keeps the developer when it still works there. */
+        ['p', 'a', 'd', 'c'].forEach(function (k) { if (k !== changed && sel[k] && !lists(sel)[k].has(sel[k])) sel[k] = ''; });
+        L = lists(sel);
+        KEYS.forEach(function (k) { fill(k, L[k], sel[k]); });
+      };
+      KEYS.forEach(function (k) { if (SELS[k]) SELS[k].addEventListener('change', function () { refresh(k); }); });
+    }
+  }
 })();
