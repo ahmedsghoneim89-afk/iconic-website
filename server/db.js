@@ -23,6 +23,12 @@ CREATE TABLE IF NOT EXISTS applications (
   id INTEGER PRIMARY KEY AUTOINCREMENT, created_at INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'new', job_id TEXT, job_title TEXT,
   name TEXT NOT NULL, phone TEXT, email TEXT, message TEXT, cv_id TEXT, cv_name TEXT, cv_mime TEXT, cv_bytes INTEGER, lang TEXT, ip_hash TEXT, note TEXT);
 CREATE INDEX IF NOT EXISTS applications_created ON applications (created_at DESC);
+/* CRM catalog link: events already handled (replay protection), the activity log, edits sent to the CRM, and small status values */
+CREATE TABLE IF NOT EXISTS catalog_events (event_id TEXT PRIMARY KEY, entity TEXT NOT NULL, entity_id TEXT NOT NULL, version INTEGER NOT NULL, received_at INTEGER NOT NULL, result TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS catalog_events_at ON catalog_events (received_at);
+CREATE TABLE IF NOT EXISTS catalog_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, kind TEXT NOT NULL, ok INTEGER NOT NULL, detail TEXT);
+CREATE TABLE IF NOT EXISTS catalog_edits (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, user_email TEXT NOT NULL, entity TEXT NOT NULL, entity_id TEXT, request_id TEXT NOT NULL UNIQUE, fields TEXT, result TEXT NOT NULL, detail TEXT);
+CREATE TABLE IF NOT EXISTS catalog_state (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `);
 /* older databases: add the columns that arrived later (existing accounts become admins) */
 function ensureColumn(table, col, ddl) {
@@ -48,7 +54,13 @@ const onChange = (f) => listeners.add(f);
 function getDoc(col, id) { const r = q.getDoc.get(col, id); return r ? { id, data: JSON.parse(r.data), updatedAt: r.updated_at } : null; }
 function listDocs(col) { return q.listDocs.all(col).map((r) => ({ id: r.id, data: JSON.parse(r.data), updatedAt: r.updated_at })); }
 function putDoc(col, id, data) { q.putDoc.run(col, id, JSON.stringify(data), Date.now()); bump(); }
+/* several writes that succeed or fail together, with one cache invalidation at the end */
+function transaction(fn) {
+  db.exec('BEGIN IMMEDIATE');
+  try { const r = fn({ put: (col, id, data) => q.putDoc.run(col, id, JSON.stringify(data), Date.now()), get: getDoc, del: (col, id) => q.delDoc.run(col, id) }); db.exec('COMMIT'); bump(); return r; }
+  catch (e) { try { db.exec('ROLLBACK'); } catch (_) { /* already rolled back */ } throw e; }
+}
 function delDoc(col, id) { q.delDoc.run(col, id); bump(); }
 function allDocs() { return q.allDocs.all().map((r) => ({ col: r.col, id: r.id, data: JSON.parse(r.data), updatedAt: r.updated_at })); }
 
-module.exports = { db, getDoc, listDocs, putDoc, delDoc, allDocs, onChange, get version() { return version; }, bump };
+module.exports = { db, getDoc, listDocs, putDoc, delDoc, allDocs, transaction, onChange, get version() { return version; }, bump };

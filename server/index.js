@@ -7,6 +7,7 @@ const cfg = require('./config');
 const store = require('./db');
 const auth = require('./auth');
 const api = require('./api');
+const catalog = require('./catalog');
 const content = require('./content');
 const { compress, pickEncoding, COMPRESSIBLE, parseCookies, sha, esc } = require('./util');
 const Ctx = require('./render/ctx');
@@ -162,8 +163,9 @@ function start() {
   if (made === true) console.log('[setup] admin account created for ' + cfg.adminEmail + '. Remove ADMIN_PASSWORD from the environment now.');
   if (made === null) console.log('[setup] No admin account yet. Set ADMIN_EMAIL and ADMIN_PASSWORD (10+ characters) and restart, or run: node server/cli.js create-admin');
   auth.getSecret();
+  catalog.startLink();
   server.listen(cfg.port, cfg.host, () => console.log(`[ready] ${cfg.brand} on ${cfg.host}:${cfg.port}  site=${cfg.siteUrl}`));
-  const stop = () => { server.close(() => { try { store.db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); store.db.close(); } catch (_) { /* closing anyway */ } process.exit(0); }); setTimeout(() => process.exit(0), 8000).unref(); };
+  const stop = () => { catalog.stopLink(); server.close(() => { try { store.db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); store.db.close(); } catch (_) { /* closing anyway */ } process.exit(0); }); setTimeout(() => process.exit(0), 8000).unref(); };
   process.on('SIGTERM', stop); process.on('SIGINT', stop);
 }
 if (require.main === module) start();

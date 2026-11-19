@@ -9,7 +9,7 @@ let cache = null, cacheVersion = -1;
 
 function snapshot() {
   if (cache && cacheVersion === store.version) return cache;
-  const raw = { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [], branches: [], jobs: [] };
+  const raw = { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [], branches: [], jobs: [], developers: [], projects: [], cities: [], areas: [] };
   let updated = 0;
   for (const d of store.allDocs()) {
     updated = Math.max(updated, d.updatedAt);
@@ -17,7 +17,7 @@ function snapshot() {
     else if (raw[d.col] && Array.isArray(raw[d.col])) raw[d.col].push(Object.assign({ id: d.id, _u: d.updatedAt }, d.data));
   }
   const ord = (a, b) => (a.order == null ? 100 : a.order) - (b.order == null ? 100 : b.order) || String(a.id).localeCompare(String(b.id));
-  ['teams', 'agents', 'properties', 'branches', 'jobs'].forEach((k) => raw[k].sort(ord));
+  ['teams', 'agents', 'properties', 'branches', 'jobs', 'developers', 'projects', 'cities', 'areas'].forEach((k) => raw[k].sort(ord));
   cache = { raw, updated, version: store.version }; cacheVersion = store.version;
   return cache;
 }

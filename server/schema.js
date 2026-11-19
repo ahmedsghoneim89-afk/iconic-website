@@ -83,10 +83,33 @@ const COLLECTIONS = {
   },
   agents: (v) => { const o = obj({ team: S(80), name: bi(120), role: bi(120), photo: img, whatsapp: S(30), phone: S(30), email, order: num(-9999, 9999) })(v); if (!o.team) fail('team required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
   properties: (v) => {
-    const o = obj({ title: bi(160), project: bi(160), location: bi(200), description: bi(4000), seoTitle: bi(120), seoDescription: bi(320), region: oneOf(REGION_IDS), type: oneOf(TYPE_IDS), purpose: oneOf(PURPOSE_IDS), agent: S(80), price: num(0, 1e12), currency: oneOf(CURRENCIES, true), beds: num(0, 99), baths: num(0, 99), area: num(0, 1e6), images: arr(img, 30), order: num(-9999, 9999) })(v);
+    const o = obj({ title: bi(160), project: bi(160), projectId: oid, location: bi(200), description: bi(4000), seoTitle: bi(120), seoDescription: bi(320), region: oneOf(REGION_IDS), type: oneOf(TYPE_IDS), purpose: oneOf(PURPOSE_IDS), agent: S(80), price: num(0, 1e12), currency: oneOf(CURRENCIES, true), beds: num(0, 99), baths: num(0, 99), area: num(0, 1e6), images: arr(img, 30), order: num(-9999, 9999) })(v);
     if (!(o.title && (o.title.en || o.title.ar))) fail('title required'); if (!o.region || !o.type || !o.purpose) fail('region, type and purpose required'); return o;
   }
 };
+
+/* ICONIC CRM catalog. Names and relationships belong to the CRM and change only through the catalog link; the generic endpoint refuses writes. */
+const CRM_ID = /^[a-f0-9]{24}$/;
+function oid(v) { const s = S(40)(v); if (s && !CRM_ID.test(s)) fail('bad CRM id'); return s; }
+const seo = { seoTitle: bi(120), seoDescription: bi(320), order: num(-9999, 9999) };
+/* what this site owns for each kind of record */
+const CATALOG_SITE = {
+  developer: obj(Object.assign({ description: bi(4000), logo: img }, seo)),
+  project: obj(Object.assign({ description: bi(4000), images: arr(img, 30) }, seo)),
+  city: obj(Object.assign({ region: oneOf(REGION_IDS, true), description: bi(4000) }, seo)),
+  area: obj(Object.assign({ description: bi(4000), images: arr(img, 12) }, seo))
+};
+/* what the CRM owns, as this site may ask for it to be changed */
+const name120 = (v) => { const s = S(120)(v); if (!s) fail('name required'); return s; };
+const CATALOG_CRM = {
+  developer: obj({ name: name120 }),
+  city: obj({ name: name120 }),
+  area: obj({ name: name120, cityId: oid }),
+  project: obj({ name: name120, active: bool, developerId: oid, cityId: oid, areaId: oid })
+};
+const CATALOG_COLLECTIONS = { developers: 'developer', projects: 'project', cities: 'city', areas: 'area' };
+const readOnly = () => fail('Edit this record from the catalog screen');
+COLLECTIONS.developers = readOnly; COLLECTIONS.projects = readOnly; COLLECTIONS.cities = readOnly; COLLECTIONS.areas = readOnly;
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 function validate(col, id, data) {
@@ -97,4 +120,4 @@ function validate(col, id, data) {
 }
 const readable = (col, id) => (col === 'site' ? (id == null || !!SITE[id]) : !!COLLECTIONS[col]);
 
-module.exports = { validate, readable, fail, REGION_IDS, TYPE_IDS, PURPOSE_IDS, JOB_TYPE_IDS, CURRENCIES, SOCIALS, S, ID };
+module.exports = { validate, readable, fail, CRM_ID, CATALOG_SITE, CATALOG_CRM, CATALOG_COLLECTIONS, REGION_IDS, TYPE_IDS, PURPOSE_IDS, JOB_TYPE_IDS, CURRENCIES, SOCIALS, S, ID };

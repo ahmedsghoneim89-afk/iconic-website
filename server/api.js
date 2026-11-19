@@ -6,6 +6,7 @@ const store = require('./db');
 const auth = require('./auth');
 const content = require('./content');
 const applications = require('./applications');
+const catalog = require('./catalog');
 const { readJson, readBody, sha } = require('./util');
 
 const { db } = store;
@@ -102,6 +103,8 @@ async function handle(req, res, url) {
 
   if (p === '/leads' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return createLead(req, res); }
   if (p === '/applications' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return applications.create(req, res); }
+  /* the CRM's signed events: no browser session, the signature is the proof */
+  if (p === '/catalog/events' && m === 'POST') return catalog.receive(req, res);
   if (p === '/login' && m === 'POST') {
     if (!auth.sameOrigin(req)) throw err(403, 'origin');
     const b = await readJson(req, 4096), ip = auth.clientIp(req);
@@ -139,6 +142,20 @@ async function handle(req, res, url) {
       const id = Number(seg[1]);
       if (m === 'PATCH') { const b = await readJson(req, 4096); return json(res, 200, { user: auth.updateUser(id, { role: b.role, name: b.name, password: b.password }, s.userId) }); }
       if (m === 'DELETE') { auth.removeUser(id, s.userId); return noContent(res); }
+    }
+    throw err(404, 'not found');
+  }
+
+  /* ---- ICONIC CRM catalog ---- */
+  if (seg[0] === 'catalog') {
+    if (seg[1] === 'status' && m === 'GET') { need(s, CONTENT_WRITERS); return json(res, 200, catalog.status()); }
+    if (seg[1] === 'reconcile' && m === 'POST') { need(s, ['admin']); return json(res, 200, await catalog.reconcile('admin:' + s.email)); }
+    const entity = seg[1], id = seg[2];
+    if (catalog.ENTITIES.includes(entity)) {
+      const user = { email: s.email, name: s.name };
+      if (!id && m === 'POST') { need(s, ['admin']); try { return json(res, 201, await catalog.edit(entity, null, await readJson(req, 64 * 1024), user)); } catch (e) { if (e.payload) return json(res, e.status, Object.assign({ error: e.message }, e.payload)); throw e; } }
+      if (id && seg[3] === 'site' && m === 'PATCH') { need(s, CONTENT_WRITERS); return json(res, 200, { record: catalog.siteUpdate(entity, id, await readJson(req, 128 * 1024)) }); }
+      if (id && !seg[3] && m === 'PATCH') { need(s, ['admin']); try { return json(res, 200, await catalog.edit(entity, id, await readJson(req, 64 * 1024), user)); } catch (e) { if (e.payload) return json(res, e.status, Object.assign({ error: e.message }, e.payload)); throw e; } }
     }
     throw err(404, 'not found');
   }

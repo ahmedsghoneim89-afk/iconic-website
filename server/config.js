@@ -18,6 +18,12 @@ module.exports = {
   googleVerification: env.GOOGLE_SITE_VERIFICATION || '',
   bingVerification: env.BING_SITE_VERIFICATION || '',
   brand: env.BRAND_NAME || 'ICONIC Real Estate',
+  /* ICONIC CRM catalog link: one secret signs what the CRM sends us, another signs what we send the CRM */
+  crmUrl: (env.CRM_SYNC_URL || '').replace(/\/+$/, ''),
+  crmEventSecret: env.CRM_EVENT_SECRET || '',
+  crmRequestSecret: env.CRM_REQUEST_SECRET || '',
+  crmTimeoutMs: Number(env.CRM_TIMEOUT_MS) || 10000,
+  crmSafetyHours: env.CRM_SAFETY_RECONCILE_HOURS === undefined ? 6 : Number(env.CRM_SAFETY_RECONCILE_HOURS),
   sessionDays: 14,
   maxUpload: 12 * 1024 * 1024
 };
