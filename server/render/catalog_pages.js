@@ -160,4 +160,18 @@ ${list.length ? `<p class="note" aria-live="polite">${esc(c.t('props.count', { n
   return page(c, { path, title, description: c.clip(c.t('pg.props.lede') + ' ' + c.t('meta.desc'), 158), jsonld, nav: 'props', noindex: !list.length || f.active }, body);
 }
 
-module.exports = { propertiesPage, developersPage, developerPage, projectsPage, projectPage, areaPage, placesBlock, resolveFilters, filterUnits, unitFilterBlock, developerHasContent, projectHasContent, areaHasContent };
+/* the home page: the newest projects and developers, with a way to the full lists; nothing at all when the CRM has none */
+const newest = (arr, n) => arr.slice().sort((a, b) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0)).slice(0, n);   // CRM ids start with their creation time
+function homeBlock(c) {
+  const K = c.catalog, l = c.lang;
+  if (!K.shownProjects.length) return '';
+  const projects = newest(K.shownProjects, 6), devs = newest(K.developers.filter((d) => developerHasContent(c, d)), 8);
+  return `<section class="latest" id="latest" aria-labelledby="latest-title"><div class="wrap">
+<div class="latest__block"><div class="latest__head"><h2 class="h2" id="latest-title">${esc(c.t('home.latest.title'))}</h2><a class="btn btn--small" href="/${l}/projects">${esc(c.t('home.latest.all'))}</a></div>
+<div class="grid">${projects.map((p) => projectCard(c, p)).join('')}</div></div>
+${devs.length ? `<div class="latest__block"><div class="latest__head"><h2 class="h3" id="latest-devs">${esc(c.t('home.devs.title'))}</h2><a class="btn btn--small" href="/${l}/developers">${esc(c.t('home.devs.all'))}</a></div>
+<div class="dgrid" aria-labelledby="latest-devs">${devs.map((d) => developerCard(c, d)).join('')}</div></div>` : ''}
+</div></section>`;
+}
+
+module.exports = { homeBlock, propertiesPage, developersPage, developerPage, projectsPage, projectPage, areaPage, placesBlock, resolveFilters, filterUnits, unitFilterBlock, developerHasContent, projectHasContent, areaHasContent };

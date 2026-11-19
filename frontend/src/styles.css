@@ -443,6 +443,12 @@ html.no-webgl .hero__sticky::before{background:linear-gradient(to top,rgba(5,5,7
 .k-word--open{overflow:visible;padding:0;margin:0}
 @media (max-width:640px){.card__media{aspect-ratio:4/3}}
 
+/* latest projects and developers on the home page */
+.latest{position:relative;background:var(--c-obsidian-950);padding:clamp(4rem,9vw,7rem) var(--gutter)}
+.latest__block+.latest__block{margin-block-start:clamp(3rem,7vw,5rem)}
+.latest__head{display:flex;flex-wrap:wrap;gap:var(--s-4);align-items:flex-end;justify-content:space-between;margin-block-end:var(--s-6)}
+.latest__head .btn{text-decoration:none}
+.latest .card__media{aspect-ratio:16/10}
 /* ===== Admin dashboard (editors only) ===== */
 #adminLink[hidden]{display:none}
 .adm{position:fixed;inset:0;z-index:var(--z-modal);background:var(--c-obsidian-950);color:var(--c-ivory-100);display:grid;grid-template-columns:15.5rem minmax(0,1fr);font-family:var(--f-body);font-size:.98rem;line-height:1.5}
