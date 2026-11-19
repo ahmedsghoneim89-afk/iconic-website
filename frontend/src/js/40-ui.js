@@ -432,44 +432,63 @@ function openContact(interest, prop) {
   if (App.introRunning) Intro.skip();
   scrollToEl($('#contact')); setTimeout(() => $('#f-name').focus({ preventScroll: true }), App.reduced ? 0 : 800);
 }
+/* small stroke icons for the contact buttons and branch cards (decorative, constant markup) */
+const ICO = {
+  wa: '<path d="M4 20l1.4-4.3A8 8 0 1 1 8.5 18.7L4 20z"/><path d="M9 9.2c.4 2 2.3 3.9 4.8 4.8l1.2-1.3-1.9-.9-.7.7c-.8-.3-1.6-1.1-1.9-1.9l.7-.7-.9-1.9L9 9.2z"/>',
+  phone: '<path d="M5 4h4l1.8 4.5-2.4 1.5a11 11 0 0 0 5.6 5.6l1.5-2.4L20 15v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7.5 8.5 6 8.5-6"/>',
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'
+};
+function icoHTML(k) { return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + ICO[k] + '</svg>'; }
 function renderContactActions() {
   const box = $('#contactActions'), c = DATA.company; box.textContent = '';
-  const add = (href, label, ev, ext) => { const a = doc.createElement('a'); a.className = 'btn'; a.href = href; a.textContent = label; if (ext) { a.target = '_blank'; a.rel = 'noopener'; } a.addEventListener('click', () => track(ev, {})); box.appendChild(a); };
-  if (waNumber(c.whatsapp)) add('https://wa.me/' + waNumber(c.whatsapp), t('contact.whatsapp'), 'whatsapp_cta_clicked', true);
-  if (c.phone) add('tel:' + String(c.phone).replace(/[^\d+]/g, ''), t('contact.call'), 'contact_cta_clicked');
-  if (c.email) add('mailto:' + c.email, t('contact.email'), 'contact_cta_clicked');
+  const add = (href, label, ev, ext, icon, primary) => {
+    const a = doc.createElement('a'), sp = doc.createElement('span'); a.className = 'btn btn--ico' + (primary ? ' btn--primary' : ''); a.href = href; sp.textContent = label;
+    a.insertAdjacentHTML('beforeend', icoHTML(icon)); a.appendChild(sp);
+    if (ext) { a.target = '_blank'; a.rel = 'noopener'; } a.addEventListener('click', () => track(ev, {})); box.appendChild(a);
+  };
+  if (waNumber(c.whatsapp)) add('https://wa.me/' + waNumber(c.whatsapp), t('contact.whatsapp'), 'whatsapp_cta_clicked', true, 'wa', true);
+  if (c.phone) add('tel:' + String(c.phone).replace(/[^\d+]/g, ''), t('contact.call'), 'contact_cta_clicked', false, 'phone');
+  if (c.email) add('mailto:' + c.email, t('contact.email'), 'contact_cta_clicked', false, 'mail');
   renderContactInfo();
 }
 const SOCIALS = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['linkedin', 'LinkedIn'], ['youtube', 'YouTube'], ['tiktok', 'TikTok'], ['x', 'X']];
 const httpsUrl = (u) => (typeof u === 'string' && /^https:\/\/\S+$/i.test(u.trim())) ? u.trim() : '';
+const mkEl = (tag, cls, text) => { const e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+/* one branch card: name, area, address, hours and the phone / WhatsApp / map actions that are filled in (same markup as the server-rendered page) */
+function branchCard(b) {
+  const nm = b.name || b.city, li = mkEl('li', 'branch'), acts = mkEl('div', 'branch__acts');
+  const act = (href, label, icon, ext, ltr, aria) => {
+    const a = mkEl('a', 'act'); a.href = href; if (ltr) a.dir = 'ltr'; if (aria) a.setAttribute('aria-label', aria); if (ext) { a.target = '_blank'; a.rel = 'noopener'; }
+    a.insertAdjacentHTML('beforeend', icoHTML(icon)); a.appendChild(mkEl('span', '', label)); acts.appendChild(a); return a;
+  };
+  li.appendChild(mkEl('h4', 'branch__name', nm));
+  if (b.city && b.name) li.appendChild(mkEl('p', 'branch__city', b.city));
+  if (b.address) li.appendChild(mkEl('address', 'branch__addr', b.address));
+  if (b.hours) { const p = mkEl('p', 'branch__hours'); p.append(mkEl('span', 'branch__k', t('branch.hours')), ' ' + b.hours); li.appendChild(p); }
+  if (b.map) act(b.map, t('branch.map'), 'pin', true, false, t('branch.map') + ' — ' + nm).classList.add('act--map');
+  if (b.phone) act('tel:' + String(b.phone).replace(/[^\d+]/g, ''), b.phone, 'phone', false, true);
+  if (waNumber(b.whatsapp)) act('https://wa.me/' + waNumber(b.whatsapp), t('contact.whatsapp'), 'wa', true, false, t('contact.whatsapp') + ' — ' + nm);
+  if (acts.childNodes.length) li.appendChild(acts);
+  return li;
+}
 function renderContactInfo() {
-  const box = $('#contactInfo'), c = DATA.company, el = (tag, cls, text) => { const e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const box = $('#contactInfo'), c = DATA.company, el = mkEl;
   box.textContent = '';
-  const row = (label, text) => { const d = el('div', 'ci__row'); d.append(el('span', 'ci__k', label), el('p', '', text)); box.appendChild(d); };
+  const row = (label, text, tag) => { const d = el('div', 'ci__row'); d.append(el('span', 'ci__k', label), el(tag || 'p', '', text)); box.appendChild(d); };
   const addr = L(c.address), hrs = L(c.hours);
-  if (addr) row(t('contact.address'), addr);
+  if (addr) row(t('contact.address'), addr, 'address');
   if (hrs) row(t('contact.hours'), hrs);
-  if (DATA.branches.length) {
-    const d = el('div', 'ci__row ci__branches'), ul = el('ul', 'branches'); d.append(el('span', 'ci__k', t('contact.branches')), ul);
-    DATA.branches.forEach((b) => {
-      const li = el('li', 'branch'), lines = el('p', 'branch__lines'), link = (href, text, ext, ltr) => { const a = el('a', '', text); a.href = href; if (ltr) a.dir = 'ltr'; if (ext) { a.target = '_blank'; a.rel = 'noopener'; } lines.appendChild(a); };
-      li.appendChild(el('h4', 'branch__name', b.name || b.city));
-      if (b.city && b.name) li.appendChild(el('span', 'branch__city', b.city));
-      if (b.address) li.appendChild(el('p', 'branch__addr', b.address));
-      if (b.hours) li.appendChild(el('p', 'branch__hours', b.hours));
-      if (b.phone) link('tel:' + String(b.phone).replace(/[^\d+]/g, ''), b.phone, false, true);
-      if (waNumber(b.whatsapp)) link('https://wa.me/' + waNumber(b.whatsapp), t('contact.whatsapp'), true, true);
-      if (b.map) link(b.map, t('branch.map'), true, false);
-      if (lines.childNodes.length) li.appendChild(lines);
-      ul.appendChild(li);
-    });
-    box.appendChild(d);
-  }
   const links = SOCIALS.map(([k, name]) => [name, httpsUrl((c.social || {})[k])]).filter((x) => x[1]);
   if (links.length) {
     const d = el('div', 'ci__row'), ul = el('ul', 'ci__social'); d.append(el('span', 'ci__k', t('contact.follow')), ul);
     links.forEach(([name, u]) => { const li = el('li'), a = el('a', '', name); a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.addEventListener('click', () => track('contact_cta_clicked', { from: 'social' })); li.appendChild(a); ul.appendChild(li); });
     box.appendChild(d);
+  }
+  const bb = $('#contactBranches'); if (!bb) return; bb.textContent = '';
+  if (DATA.branches.length) {
+    const sec = el('section', 'cbranches__in'), h = el('h3', 'cbranches__h', t('contact.branches')), ul = el('ul', 'branches');
+    h.id = 'cb-h'; sec.setAttribute('aria-labelledby', 'cb-h'); DATA.branches.forEach((b) => ul.appendChild(branchCard(b))); sec.append(h, ul); bb.appendChild(sec);
   }
 }
 function initForm() {

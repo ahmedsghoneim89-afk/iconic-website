@@ -152,7 +152,11 @@
         <h2 class="convert__title shimmer" id="conv-title" data-i18n="conv.title">Your next chapter starts here.</h2>
         <p class="lede" style="margin-block-start:var(--s-5)" data-i18n="conv.lede">Tell us what you are looking for.</p>
         <div class="contact-actions" id="contactActions"><!--SSR:actions--></div>
-        <p class="sellcta"><span data-i18n="sell.cta.text">Have a unit to sell or rent?</span> <a class="btn btn--small" href="/__LANG__/sell" data-i18n="sell.cta.btn">Send us the details</a></p>
+        <div class="sellcta">
+          <span class="sellcta__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></span>
+          <p class="sellcta__txt" data-i18n="sell.cta.text">Have a unit to sell or rent?</p>
+          <a class="btn btn--small" href="/__LANG__/sell" data-i18n="sell.cta.btn">Send us the details</a>
+        </div>
         <div class="contact-info" id="contactInfo"><!--SSR:info--></div>
       </div>
       <form class="form" id="leadForm" novalidate aria-labelledby="form-title">
@@ -193,6 +197,7 @@
         <p class="status" id="formStatus" role="status" aria-live="polite"></p>
       </form>
     </div>
+    <div class="wrap cbranches" id="contactBranches"><!--SSR:branches--></div>
   </section>
 </main>
 

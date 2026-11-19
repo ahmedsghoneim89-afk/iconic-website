@@ -45,28 +45,42 @@ function pillars(c) {
   const list = own.length ? own : [1, 2, 3, 4, 5, 6, 7, 8].map((n) => c.t('story.' + n));
   return list.map((s) => `<li>${esc(s)}</li>`).join('');
 }
+/* small stroke icons shared by the contact buttons and the branch cards (decorative: the text next to them names the action) */
+const ICO = {
+  wa: '<path d="M4 20l1.4-4.3A8 8 0 1 1 8.5 18.7L4 20z"/><path d="M9 9.2c.4 2 2.3 3.9 4.8 4.8l1.2-1.3-1.9-.9-.7.7c-.8-.3-1.6-1.1-1.9-1.9l.7-.7-.9-1.9L9 9.2z"/>',
+  phone: '<path d="M5 4h4l1.8 4.5-2.4 1.5a11 11 0 0 0 5.6 5.6l1.5-2.4L20 15v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7.5 8.5 6 8.5-6"/>',
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>'
+};
+const ico = (k) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICO[k]}</svg>`;
 function contactActions(c) {
   const co = c.company, out = [];
-  if (waNumber(co.whatsapp)) out.push(`<a class="btn" href="https://wa.me/${waNumber(co.whatsapp)}" target="_blank" rel="noopener">${esc(c.t('contact.whatsapp'))}</a>`);
-  if (co.phone) out.push(`<a class="btn" href="tel:${esc(String(co.phone).replace(/[^\d+]/g, ''))}">${esc(c.t('contact.call'))}</a>`);
-  if (co.email) out.push(`<a class="btn" href="mailto:${esc(co.email)}">${esc(c.t('contact.email'))}</a>`);
+  if (waNumber(co.whatsapp)) out.push(`<a class="btn btn--primary btn--ico" href="https://wa.me/${waNumber(co.whatsapp)}" target="_blank" rel="noopener">${ico('wa')}<span>${esc(c.t('contact.whatsapp'))}</span></a>`);
+  if (co.phone) out.push(`<a class="btn btn--ico" href="tel:${esc(String(co.phone).replace(/[^\d+]/g, ''))}">${ico('phone')}<span>${esc(c.t('contact.call'))}</span></a>`);
+  if (co.email) out.push(`<a class="btn btn--ico" href="mailto:${esc(co.email)}">${ico('mail')}<span>${esc(c.t('contact.email'))}</span></a>`);
   return out.join('');
 }
-/* the company's branches: name, address, phone, hours and a map link, each only when filled in */
+/* the company's branches: name, area, address, hours, and phone / WhatsApp / map actions, each only when filled in */
 function branchItem(c, b) {
-  const lines = [];
-  if (b.phone) lines.push(`<a dir="ltr" href="tel:${esc(String(b.phone).replace(/[^\d+]/g, ''))}">${esc(b.phone)}</a>`);
-  if (waNumber(b.whatsapp)) lines.push(`<a dir="ltr" href="https://wa.me/${waNumber(b.whatsapp)}" target="_blank" rel="noopener">${esc(c.t('contact.whatsapp'))}</a>`);
-  return `<li class="branch"><h4 class="branch__name">${esc(b.name || b.city)}</h4>${b.city && b.name ? `<span class="branch__city">${esc(b.city)}</span>` : ''}${b.address ? `<p class="branch__addr">${esc(b.address)}</p>` : ''}${b.hours ? `<p class="branch__hours">${esc(b.hours)}</p>` : ''}${lines.length || b.map ? `<p class="branch__lines">${lines.join('')}${b.map ? `<a href="${esc(b.map)}" target="_blank" rel="noopener">${esc(c.t('branch.map'))}</a>` : ''}</p>` : ''}</li>`;
+  const nm = b.name || b.city, acts = [];
+  if (b.map) acts.push(`<a class="act act--map" href="${esc(b.map)}" target="_blank" rel="noopener" aria-label="${esc(c.t('branch.map') + ' — ' + nm)}">${ico('pin')}<span>${esc(c.t('branch.map'))}</span></a>`);
+  if (b.phone) acts.push(`<a class="act" dir="ltr" href="tel:${esc(String(b.phone).replace(/[^\d+]/g, ''))}">${ico('phone')}<span>${esc(b.phone)}</span></a>`);
+  if (waNumber(b.whatsapp)) acts.push(`<a class="act" href="https://wa.me/${waNumber(b.whatsapp)}" target="_blank" rel="noopener" aria-label="${esc(c.t('contact.whatsapp') + ' — ' + nm)}">${ico('wa')}<span>${esc(c.t('contact.whatsapp'))}</span></a>`);
+  return `<li class="branch"><h4 class="branch__name">${esc(nm)}</h4>${b.city && b.name ? `<p class="branch__city">${esc(b.city)}</p>` : ''}${b.address ? `<address class="branch__addr">${esc(b.address)}</address>` : ''}${b.hours ? `<p class="branch__hours"><span class="branch__k">${esc(c.t('branch.hours'))}</span> ${esc(b.hours)}</p>` : ''}${acts.length ? `<div class="branch__acts">${acts.join('')}</div>` : ''}</li>`;
+}
+/* the list of branch cards; the home page shows it as its own block under the contact form, inner pages inside the footer */
+function branchList(c) { return `<ul class="branches">${c.branches.map((b) => branchItem(c, b)).join('')}</ul>`; }
+function branchesSection(c) {
+  return c.branches.length ? `<section class="cbranches__in" aria-labelledby="cb-h"><h3 class="cbranches__h" id="cb-h">${esc(c.t('contact.branches'))}</h3>${branchList(c)}</section>` : '';
 }
 function branchesBlock(c) {
-  return c.branches.length ? `<div class="ci__row ci__branches"><span class="ci__k">${esc(c.t('contact.branches'))}</span><ul class="branches">${c.branches.map((b) => branchItem(c, b)).join('')}</ul></div>` : '';
+  return c.branches.length ? `<div class="ci__row ci__branches"><span class="ci__k">${esc(c.t('contact.branches'))}</span>${branchList(c)}</div>` : '';
 }
-function contactInfo(c) {
+function contactInfo(c, o) {
   const co = c.company, rows = [];
-  if (co.address) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.address'))}</span><p>${esc(co.address)}</p></div>`);
+  if (co.address) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.address'))}</span><address>${esc(co.address)}</address></div>`);
   if (co.hours) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.hours'))}</span><p>${esc(co.hours)}</p></div>`);
-  if (c.branches.length) rows.push(branchesBlock(c));
+  if (c.branches.length && !(o && o.branches === false)) rows.push(branchesBlock(c));
   const links = SOCIAL_NAMES.map(([k, n]) => [n, httpsUrl(co.social[k])]).filter((x) => x[1]);
   if (links.length) rows.push(`<div class="ci__row"><span class="ci__k">${esc(c.t('contact.follow'))}</span><ul class="ci__social">${links.map(([n, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a></li>`).join('')}</ul></div>`);
   return rows.join('');
@@ -114,4 +128,4 @@ ${jobField}
 <label class="consent"><input type="checkbox" id="a-consent" name="consent" aria-describedby="ea-consent"><span>${esc(c.t('apply.consent'))}</span></label><p class="err" id="ea-consent" role="alert"></p>
 <button class="btn btn--primary" id="applyBtn" type="submit">${esc(c.t('apply.submit'))}</button><p class="status" id="applyStatus" role="status" aria-live="polite"></p></form>`;
 }
-module.exports = { applyForm, branchItem, branchesBlock, card, cards, agentCard, teams, pillars, contactActions, contactInfo, regionLinks, activeRegions, leadForm, waHref, agentActions, agentPhoto, httpsUrl, SOCIAL_NAMES };
+module.exports = { applyForm, branchItem, branchesBlock, branchesSection, card, cards, agentCard, teams, pillars, contactActions, contactInfo, regionLinks, activeRegions, leadForm, waHref, agentActions, agentPhoto, httpsUrl, SOCIAL_NAMES };

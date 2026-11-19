@@ -58,6 +58,7 @@ put('<div class="teams__list" id="teamsList"></div>', '<div class="teams__list" 
 put('<ol class="pillars" id="pillars"></ol>', '<ol class="pillars" id="pillars"><!--SSR:pillars--></ol>')
 put('<div class="contact-actions" id="contactActions"></div>', '<div class="contact-actions" id="contactActions"><!--SSR:actions--></div>')
 put('<div class="contact-info" id="contactInfo"></div>', '<div class="contact-info" id="contactInfo"><!--SSR:info--></div>')
+put('<div class="wrap cbranches" id="contactBranches"></div>', '<div class="wrap cbranches" id="contactBranches"><!--SSR:branches--></div>')
 put('<p class="note" id="propsCount" aria-live="polite"></p>', '<p class="note" id="propsCount" aria-live="polite"><!--SSR:count--></p>')
 put('<span id="year"></span>', '<span id="year"><!--SSR:year--></span>')
 put('data-i18n="props.lede">Approved listings appear here, with filters that come from the listing data.</p>', 'data-i18n="props.lede">Approved listings appear here, with filters that come from the listing data.</p>\n        <!--SSR:regions-->')
