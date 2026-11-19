@@ -128,12 +128,19 @@ const hasAny = (b) => !!(b.en || b.ar);
 const setErr = (f, key, msg) => { const e = f.querySelector('[data-err="' + key + '"]'); if (e) e.textContent = msg || ''; return !!msg; };
 
 /* ---------- image helpers ---------- */
+/* Resize before upload. A picture with a see-through background (a cut-out portrait) keeps it: it is saved as WebP (PNG where the browser cannot write WebP)
+   instead of being flattened onto white as a JPEG, so it sits on the site's dark frame. Opaque pictures stay JPEG. */
 async function shrink(file, max) {
   const bmp = await createImageBitmap(file), k = Math.min(1, max / Math.max(bmp.width, bmp.height)), c = doc.createElement('canvas');
   c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
-  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0, c.width, c.height);
   if (bmp.close) bmp.close();
-  return new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.86));
+  let seeThrough = false;
+  if (file.type !== 'image/jpeg') { const px = x.getImageData(0, 0, c.width, c.height).data; for (let i = 3; i < px.length; i += 4) if (px[i] < 250) { seeThrough = true; break; } }
+  const enc = (type, q) => new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('encode')), type, q));
+  if (seeThrough) return enc('image/webp', 0.9);   // falls back to PNG by itself where WebP cannot be written
+  x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  return enc('image/jpeg', 0.86);
 }
 async function uploadImage(file, max) { const blob = (file.type === 'image/svg+xml' && !SERVER) ? file : await shrink(file, max); const r = await Store.assets.upload(blob); return { id: r.id }; }
 const isHttps = (u) => /^https:\/\/\S+$/i.test(u);
