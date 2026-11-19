@@ -1,23 +1,23 @@
-/* ---------- Catalog: developers, projects, cities and areas from the ICONIC CRM ----------
+/* ---------- Developers, projects, governorates and areas from the ICONIC CRM ----------
    Names and links belong to the CRM. An admin can change them here: the change goes to the CRM first and the dashboard shows only what the CRM confirms.
    Descriptions, pictures, search text and order belong to this site and are saved here. */
 Object.assign(AD.en, {
-  'nav.catalog': 'Catalog',
-  'ct.lead': 'Developers, projects, cities and areas come from the ICONIC CRM and reach the site within moments of a change. Descriptions, pictures, search text and order are kept on the site.',
-  'ct.loading': 'Loading the catalog…', 'ct.loadErr': 'The catalog could not be loaded. Try again in a moment.',
-  'ct.t.projects': 'Projects', 'ct.t.developers': 'Developers', 'ct.t.places': 'Cities and areas', 'ct.t.sync': 'Link status',
-  'ct.search': 'Search', 'ct.allDevs': 'All developers', 'ct.allCities': 'All cities', 'ct.anyStatus': 'Any status', 'ct.active': 'Active', 'ct.inactive': 'Inactive',
+  'nav.catalog': 'Developers & projects',
+  'ct.lead': 'Developers, projects, governorates and areas come from the ICONIC CRM and reach the site within moments of a change. Edit any of them here, and see how they are linked under Links. Descriptions, pictures, search text and order are kept on the site.',
+  'ct.loading': 'Loading developers and projects…', 'ct.loadErr': 'Developers and projects could not be loaded. Try again in a moment.',
+  'ct.t.projects': 'Projects', 'ct.t.developers': 'Developers', 'ct.t.places': 'Governorates and areas', 'ct.t.links': 'Links', 'ct.t.sync': 'CRM connection',
+  'ct.search': 'Search', 'ct.allDevs': 'All developers', 'ct.allCities': 'All governorates', 'ct.anyStatus': 'Any status', 'ct.active': 'Active', 'ct.inactive': 'Inactive',
   'ct.units': '{n} unit(s)', 'ct.projects': '{n} project(s)', 'ct.more': 'Showing the first {n}. Narrow the search to see more.',
-  'ct.add.project': 'Add a project', 'ct.add.developer': 'Add a developer', 'ct.add.city': 'Add a city', 'ct.add.area': 'Add an area',
-  'ct.new.project': 'New project', 'ct.new.developer': 'New developer', 'ct.new.city': 'New city', 'ct.new.area': 'New area',
-  'ct.edit.project': 'Edit project', 'ct.edit.developer': 'Edit developer', 'ct.edit.city': 'Edit city', 'ct.edit.area': 'Edit area',
-  'ct.empty.projects': 'No projects yet. They appear here as soon as the CRM link has imported them.', 'ct.empty.developers': 'No developers yet. They appear here as soon as the CRM link has imported them.', 'ct.empty.places': 'No cities yet.', 'ct.noMatch': 'Nothing matches this search.',
+  'ct.add.project': 'Add a project', 'ct.add.developer': 'Add a developer', 'ct.add.city': 'Add a governorate', 'ct.add.area': 'Add an area',
+  'ct.new.project': 'New project', 'ct.new.developer': 'New developer', 'ct.new.city': 'New governorate', 'ct.new.area': 'New area',
+  'ct.edit.project': 'Edit project', 'ct.edit.developer': 'Edit developer', 'ct.edit.city': 'Edit governorate', 'ct.edit.area': 'Edit area',
+  'ct.empty.projects': 'No projects yet. They appear here as soon as the CRM link has imported them.', 'ct.empty.developers': 'No developers yet. They appear here as soon as the CRM link has imported them.', 'ct.empty.places': 'No governorates yet.', 'ct.noMatch': 'Nothing matches this search.',
   'ct.crm': 'From the CRM', 'ct.crmHint': 'Saved to the CRM first. The dashboard shows the values the CRM confirms.', 'ct.readonly': 'Only admins can change names and links. You can edit the site content below.',
   'ct.site': 'Shown on the site', 'ct.siteHint': 'Kept on this site only. The CRM never sees it.',
-  'ct.f.name': 'Name', 'ct.f.developer': 'Developer', 'ct.f.city': 'City', 'ct.f.area': 'Area', 'ct.f.noDev': 'No developer', 'ct.f.noArea': 'No area',
+  'ct.f.name': 'Name', 'ct.f.developer': 'Developer', 'ct.f.city': 'Governorate', 'ct.f.area': 'Area', 'ct.f.noDev': 'No developer', 'ct.f.noArea': 'No area',
   'ct.f.active': 'Active project', 'ct.f.activeHint': 'An inactive project is hidden from the site. Its units stay on the site.',
-  'ct.f.region': 'Region on the site', 'ct.f.regionHint': 'The site region this city belongs to. Projects and units in the city appear under it.', 'ct.f.desc': 'Description', 'ct.f.logo': 'Logo', 'ct.f.images': 'Pictures',
-  'ct.noRegion': 'No region yet', 'ct.cityFixed': 'An area stays in its city.',
+  'ct.f.region': 'Region on the site', 'ct.f.regionHint': 'The site region this governorate belongs to. Projects and units in the governorate appear under it.', 'ct.f.desc': 'Description', 'ct.f.logo': 'Logo', 'ct.f.images': 'Pictures',
+  'ct.noRegion': 'No region yet', 'ct.cityFixed': 'An area stays in its governorate.',
   'ct.save.crm': 'Save to the CRM', 'ct.save.site': 'Save site content', 'ct.confirmed': 'Saved. The CRM confirmed version {v}.', 'ct.siteSaved': 'Site content saved', 'ct.nochange': 'Nothing was changed.',
   'ct.err.conflict': 'This record was changed in the CRM after you opened it. Your entries are kept. Press Save again to apply your changes on top of the latest values.', 'ct.err.latest': 'Latest in the CRM', 'ct.err.fix': 'Fix the highlighted field and save again.',
   'ct.err.perm': 'Only admins can change CRM names and links.', 'ct.err.down': 'The CRM could not be reached or did not confirm. Nothing was changed. Your entries are kept. Try again in a moment.', 'ct.err.gone': 'This record no longer exists in the CRM.',
@@ -27,31 +27,33 @@ Object.assign(AD.en, {
   'ct.s.checkNow': 'Check again now', 'ct.s.checking': 'Checking…', 'ct.s.checked': 'Checked. The site matches the CRM.', 'ct.s.checkFail': 'The check failed: {msg}',
   'ct.s.queue': 'Delivery from the CRM', 'ct.s.waiting': 'Waiting to be delivered', 'ct.s.refused': 'Refused by the site', 'ct.s.lastSent': 'Last delivered', 'ct.s.lastFail': 'Last delivery problem', 'ct.s.unreach': 'The CRM could not be reached: {msg}', 'ct.s.resend': 'Send again', 'ct.s.resent': '{n} change(s) queued to send again',
   'ct.res.created': 'added', 'ct.res.updated': 'updated', 'ct.res.deleted': 'removed', 'ct.res.duplicate': 'already received', 'ct.res.stale': 'older than what the site holds, ignored', 'ct.res.unchanged': 'no change',
-  'ct.ent.developer': 'developer', 'ct.ent.project': 'project', 'ct.ent.city': 'city', 'ct.ent.area': 'area',
-  'ct.s.recent': 'Recent activity', 'ct.s.sums': '{d} developers, {p} projects, {c} cities, {a} areas', 'ct.s.hidden': '{n} hidden',
+  'ct.ent.developer': 'developer', 'ct.ent.project': 'project', 'ct.ent.city': 'governorate', 'ct.ent.area': 'area',
+  'ct.s.recent': 'Recent activity', 'ct.s.sums': '{d} developers, {p} projects, {c} governorates, {a} areas', 'ct.s.hidden': '{n} hidden',
   'ct.s.units': 'Units and projects', 'ct.s.unitsHint': 'A unit that only has a project name can be matched to the CRM project with the same name. Only exact, single matches are linked. Nothing else on the unit changes.',
   'ct.s.unitsNow': '{linked} of {total} units are linked to a CRM project.', 'ct.s.preview': 'Preview the matches', 'ct.s.apply': 'Link {n} unit(s)', 'ct.s.applied': '{n} unit(s) linked', 'ct.s.working': 'Working…',
   'ct.r.linked': 'Will be linked', 'ct.r.ambiguous': 'Needs a decision (more than one project has this name)', 'ct.r.missing': 'No project with this name in the CRM', 'ct.r.broken': 'Linked project no longer exists in the CRM', 'ct.r.nothing': 'Nothing to link.', 'ct.r.noText': '{n} unit(s) have no project name.',
+  'ct.l.hint': 'How everything is linked: governorate, area, project and developer. Open a project with Edit to change its developer, governorate or area.',
+  'ct.l.by': 'Group by', 'ct.l.byCity': 'Governorate', 'ct.l.byDev': 'Developer', 'ct.l.noCity': 'No governorate', 'ct.l.noArea': 'No area', 'ct.l.noDev': 'No developer', 'ct.l.areas': '{n} area(s)', 'ct.l.in': 'in {where}', 'ct.l.empty': 'Nothing to show yet.', 'ct.l.expand': 'Open all', 'ct.l.collapse': 'Close all',
   'ct.u.project': 'Project from the CRM', 'ct.u.hint': 'Pick a developer, governorate or area to narrow the projects. The unit follows its project: developer, governorate, area and region all come from it. Leave the project empty for a unit with no project.',
   'ct.u.developer': 'Developer', 'ct.u.city': 'Governorate', 'ct.u.area': 'Area', 'ct.u.all': 'All', 'ct.u.cleared': 'The project was cleared because it is not in the choices you made. Pick another project.', 'ct.u.none': 'Not linked', 'ct.u.loading': 'The project list is still loading. Close this form and open it again in a moment.', 'ct.u.followed': 'The region and location come from the project.'
 });
 Object.assign(AD.ar, {
-  'nav.catalog': 'الكتالوج',
-  'ct.lead': 'المطورون والمشاريع والمدن والمناطق تأتي من نظام ICONIC CRM وتصل إلى الموقع خلال لحظات من أي تغيير. الوصف والصور ونصوص البحث والترتيب تُحفظ في الموقع.',
-  'ct.loading': 'جارٍ تحميل الكتالوج…', 'ct.loadErr': 'تعذّر تحميل الكتالوج. حاول مرة أخرى بعد لحظات.',
-  'ct.t.projects': 'المشاريع', 'ct.t.developers': 'المطورون', 'ct.t.places': 'المدن والمناطق', 'ct.t.sync': 'حالة الربط',
-  'ct.search': 'بحث', 'ct.allDevs': 'كل المطورين', 'ct.allCities': 'كل المدن', 'ct.anyStatus': 'أي حالة', 'ct.active': 'نشط', 'ct.inactive': 'غير نشط',
+  'nav.catalog': 'المطورون والمشاريع',
+  'ct.lead': 'المطورون والمشاريع والمحافظات والمناطق تأتي من نظام ICONIC CRM وتصل إلى الموقع خلال لحظات من أي تغيير. عدّل أيًّا منها من هنا، وشاهد كيف ترتبط ببعضها في تاب «الربط». الوصف والصور ونصوص البحث والترتيب تُحفظ في الموقع.',
+  'ct.loading': 'جارٍ تحميل المطورين والمشاريع…', 'ct.loadErr': 'تعذّر تحميل المطورين والمشاريع. حاول مرة أخرى بعد لحظات.',
+  'ct.t.projects': 'المشاريع', 'ct.t.developers': 'المطورون', 'ct.t.places': 'المحافظات والمناطق', 'ct.t.links': 'الربط', 'ct.t.sync': 'الاتصال بالنظام',
+  'ct.search': 'بحث', 'ct.allDevs': 'كل المطورين', 'ct.allCities': 'كل المحافظات', 'ct.anyStatus': 'أي حالة', 'ct.active': 'نشط', 'ct.inactive': 'غير نشط',
   'ct.units': '{n} وحدة', 'ct.projects': '{n} مشروع', 'ct.more': 'المعروض أول {n}. ضيّق البحث لرؤية المزيد.',
-  'ct.add.project': 'إضافة مشروع', 'ct.add.developer': 'إضافة مطور', 'ct.add.city': 'إضافة مدينة', 'ct.add.area': 'إضافة منطقة',
-  'ct.new.project': 'مشروع جديد', 'ct.new.developer': 'مطور جديد', 'ct.new.city': 'مدينة جديدة', 'ct.new.area': 'منطقة جديدة',
-  'ct.edit.project': 'تعديل المشروع', 'ct.edit.developer': 'تعديل المطور', 'ct.edit.city': 'تعديل المدينة', 'ct.edit.area': 'تعديل المنطقة',
-  'ct.empty.projects': 'لا توجد مشاريع بعد. تظهر هنا فور أن يستوردها الربط مع النظام.', 'ct.empty.developers': 'لا يوجد مطورون بعد. يظهرون هنا فور أن يستوردهم الربط مع النظام.', 'ct.empty.places': 'لا توجد مدن بعد.', 'ct.noMatch': 'لا توجد نتائج مطابقة للبحث.',
+  'ct.add.project': 'إضافة مشروع', 'ct.add.developer': 'إضافة مطور', 'ct.add.city': 'إضافة محافظة', 'ct.add.area': 'إضافة منطقة',
+  'ct.new.project': 'مشروع جديد', 'ct.new.developer': 'مطور جديد', 'ct.new.city': 'محافظة جديدة', 'ct.new.area': 'منطقة جديدة',
+  'ct.edit.project': 'تعديل المشروع', 'ct.edit.developer': 'تعديل المطور', 'ct.edit.city': 'تعديل المحافظة', 'ct.edit.area': 'تعديل المنطقة',
+  'ct.empty.projects': 'لا توجد مشاريع بعد. تظهر هنا فور أن يستوردها الربط مع النظام.', 'ct.empty.developers': 'لا يوجد مطورون بعد. يظهرون هنا فور أن يستوردهم الربط مع النظام.', 'ct.empty.places': 'لا توجد محافظات بعد.', 'ct.noMatch': 'لا توجد نتائج مطابقة للبحث.',
   'ct.crm': 'من نظام CRM', 'ct.crmHint': 'يُحفظ في النظام أولًا، وتعرض لوحة الإدارة القيم التي يؤكدها النظام فقط.', 'ct.readonly': 'تغيير الأسماء والروابط للمدير فقط. يمكنك تعديل محتوى الموقع أدناه.',
   'ct.site': 'يظهر في الموقع', 'ct.siteHint': 'يُحفظ في هذا الموقع فقط ولا يراه نظام CRM.',
-  'ct.f.name': 'الاسم', 'ct.f.developer': 'المطور', 'ct.f.city': 'المدينة', 'ct.f.area': 'المنطقة', 'ct.f.noDev': 'بدون مطور', 'ct.f.noArea': 'بدون منطقة',
+  'ct.f.name': 'الاسم', 'ct.f.developer': 'المطور', 'ct.f.city': 'المحافظة', 'ct.f.area': 'المنطقة', 'ct.f.noDev': 'بدون مطور', 'ct.f.noArea': 'بدون منطقة',
   'ct.f.active': 'مشروع نشط', 'ct.f.activeHint': 'المشروع غير النشط يُخفى من الموقع، وتبقى وحداته ظاهرة.',
-  'ct.f.region': 'الإقليم في الموقع', 'ct.f.regionHint': 'إقليم الموقع الذي تتبعه هذه المدينة. تظهر مشاريعها ووحداتها تحته.', 'ct.f.desc': 'الوصف', 'ct.f.logo': 'الشعار', 'ct.f.images': 'الصور',
-  'ct.noRegion': 'بلا إقليم بعد', 'ct.cityFixed': 'المنطقة تبقى في مدينتها.',
+  'ct.f.region': 'الإقليم في الموقع', 'ct.f.regionHint': 'إقليم الموقع الذي تتبعه هذه المحافظة. تظهر مشاريعها ووحداتها تحته.', 'ct.f.desc': 'الوصف', 'ct.f.logo': 'الشعار', 'ct.f.images': 'الصور',
+  'ct.noRegion': 'بلا إقليم بعد', 'ct.cityFixed': 'المنطقة تبقى في محافظتها.',
   'ct.save.crm': 'حفظ في النظام', 'ct.save.site': 'حفظ محتوى الموقع', 'ct.confirmed': 'تم الحفظ. أكّد النظام الإصدار {v}.', 'ct.siteSaved': 'تم حفظ محتوى الموقع', 'ct.nochange': 'لم يتغير شيء.',
   'ct.err.conflict': 'تغيّر هذا السجل في النظام بعد فتحك له. بياناتك محفوظة. اضغط حفظ مرة أخرى لتطبيق تعديلاتك فوق أحدث القيم.', 'ct.err.latest': 'الأحدث في النظام', 'ct.err.fix': 'صحّح الحقل المحدد ثم احفظ مرة أخرى.',
   'ct.err.perm': 'تغيير أسماء النظام وروابطه للمدير فقط.', 'ct.err.down': 'تعذّر الوصول إلى النظام أو لم يؤكد التغيير. لم يتغير شيء. بياناتك محفوظة، حاول مرة أخرى بعد لحظات.', 'ct.err.gone': 'هذا السجل لم يعد موجودًا في النظام.',
@@ -61,17 +63,19 @@ Object.assign(AD.ar, {
   'ct.s.checkNow': 'افحص الآن مرة أخرى', 'ct.s.checking': 'جارٍ الفحص…', 'ct.s.checked': 'تم الفحص. الموقع مطابق للنظام.', 'ct.s.checkFail': 'فشل الفحص: {msg}',
   'ct.s.queue': 'التسليم من النظام', 'ct.s.waiting': 'في انتظار التسليم', 'ct.s.refused': 'رفضها الموقع', 'ct.s.lastSent': 'آخر تسليم', 'ct.s.lastFail': 'آخر مشكلة في التسليم', 'ct.s.unreach': 'تعذّر الوصول إلى النظام: {msg}', 'ct.s.resend': 'إرسال مرة أخرى', 'ct.s.resent': 'تمت جدولة {n} تغيير للإرسال مرة أخرى',
   'ct.res.created': 'أُضيف', 'ct.res.updated': 'تحدّث', 'ct.res.deleted': 'حُذف', 'ct.res.duplicate': 'وصل من قبل', 'ct.res.stale': 'أقدم مما في الموقع فتم تجاهله', 'ct.res.unchanged': 'بلا تغيير',
-  'ct.ent.developer': 'مطور', 'ct.ent.project': 'مشروع', 'ct.ent.city': 'مدينة', 'ct.ent.area': 'منطقة',
-  'ct.s.recent': 'آخر النشاطات', 'ct.s.sums': '{d} مطور، {p} مشروع، {c} مدينة، {a} منطقة', 'ct.s.hidden': '{n} مخفي',
+  'ct.ent.developer': 'مطور', 'ct.ent.project': 'مشروع', 'ct.ent.city': 'محافظة', 'ct.ent.area': 'منطقة',
+  'ct.s.recent': 'آخر النشاطات', 'ct.s.sums': '{d} مطور، {p} مشروع، {c} محافظة، {a} منطقة', 'ct.s.hidden': '{n} مخفي',
   'ct.s.units': 'الوحدات والمشاريع', 'ct.s.unitsHint': 'الوحدة التي لها اسم مشروع فقط يمكن مطابقتها مع مشروع النظام بنفس الاسم. تُربط المطابقات الدقيقة والمفردة فقط، ولا يتغير أي شيء آخر في الوحدة.',
   'ct.s.unitsNow': '{linked} من {total} وحدة مرتبطة بمشروع في النظام.', 'ct.s.preview': 'معاينة المطابقات', 'ct.s.apply': 'ربط {n} وحدة', 'ct.s.applied': 'تم ربط {n} وحدة', 'ct.s.working': 'جارٍ العمل…',
   'ct.r.linked': 'سيتم ربطها', 'ct.r.ambiguous': 'تحتاج قرارًا (أكثر من مشروع بنفس الاسم)', 'ct.r.missing': 'لا يوجد مشروع بهذا الاسم في النظام', 'ct.r.broken': 'المشروع المرتبط لم يعد موجودًا في النظام', 'ct.r.nothing': 'لا يوجد ما يُربط.', 'ct.r.noText': '{n} وحدة بلا اسم مشروع.',
+  'ct.l.hint': 'كيف يرتبط كل شيء: المحافظة والمنطقة والمشروع والمطور. اضغط «تعديل» على أي مشروع لتغيير مطوره أو محافظته أو منطقته.',
+  'ct.l.by': 'تجميع حسب', 'ct.l.byCity': 'المحافظة', 'ct.l.byDev': 'المطور', 'ct.l.noCity': 'بدون محافظة', 'ct.l.noArea': 'بدون منطقة', 'ct.l.noDev': 'بدون مطور', 'ct.l.areas': '{n} منطقة', 'ct.l.in': 'في {where}', 'ct.l.empty': 'لا يوجد شيء للعرض بعد.', 'ct.l.expand': 'فتح الكل', 'ct.l.collapse': 'إغلاق الكل',
   'ct.u.project': 'المشروع من النظام', 'ct.u.hint': 'اختر مطورًا أو محافظة أو منطقة لتضييق قائمة المشاريع. الوحدة تتبع مشروعها: المطور والمحافظة والمنطقة والإقليم كلها تأتي منه. اترك المشروع فارغًا لوحدة بلا مشروع.',
   'ct.u.developer': 'المطور', 'ct.u.city': 'المحافظة', 'ct.u.area': 'المنطقة', 'ct.u.all': 'الكل', 'ct.u.cleared': 'تم إلغاء المشروع لأنه لا يطابق اختياراتك. اختر مشروعًا آخر.', 'ct.u.none': 'غير مرتبطة', 'ct.u.loading': 'قائمة المشاريع ما زالت تُحمَّل. أغلق هذا النموذج وافتحه بعد لحظات.', 'ct.u.followed': 'الإقليم والموقع يأتيان من المشروع.'
 });
 if (SERVER) { [ROLE_SECTIONS.admin, ROLE_SECTIONS.editor].forEach((a) => { const i = a.indexOf('units'); a.splice(i < 0 ? a.length : i, 0, 'catalog'); }); }
 
-const CT = { tab: 'projects', data: null, loading: null, err: '', q: '', dev: '', city: '', status: '', form: null, crm: null, report: null, working: '', timer: 0, limit: 200 };
+const CT = { by: 'city', openAll: '', tab: 'projects', data: null, loading: null, err: '', q: '', dev: '', city: '', status: '', form: null, crm: null, report: null, working: '', timer: 0, limit: 200 };
 const CT_KIND = { developer: 'developers', project: 'projects', city: 'cities', area: 'areas' };
 const ctBy = (kind, id) => (CT.data && id ? CT.data[CT_KIND[kind]].find((x) => x.id === id) : null) || null;
 const catalogProject = (id) => ctBy('project', id), catalogCity = (id) => ctBy('city', id);
@@ -103,7 +107,7 @@ function ctSyncTick() {
 
 /* ---------- small pieces ---------- */
 const ctErr = (key) => h('p', { class: 'af__e', 'data-err': key });
-const ctTabs = () => h('div', { class: 'adm__tabs', role: 'tablist' }, ['projects', 'developers', 'places', 'sync'].map((k) => h('button', { type: 'button', role: 'tab', class: 'adm__tab', 'aria-selected': CT.tab === k ? 'true' : 'false', text: ta('ct.t.' + k),
+const ctTabs = () => h('div', { class: 'adm__tabs', role: 'tablist' }, ['projects', 'developers', 'places', 'links', 'sync'].map((k) => h('button', { type: 'button', role: 'tab', class: 'adm__tab', 'aria-selected': CT.tab === k ? 'true' : 'false', text: ta('ct.t.' + k),
   onclick: () => { CT.tab = k; CT.form = null; drawAdmin(); if (k === 'sync') { Promise.all([loadCatalog(), ctLoadCrm()]).then(ctRedraw); ctSyncTick(); } } })));
 const ctOpen = (kind, id, extra) => { CT.form = Object.assign({ kind, id }, extra || {}); drawAdmin(); };
 const ctSearch = (label, onChange) => {
@@ -120,7 +124,7 @@ const ctWhere = (p) => { const a = ctBy('area', p.areaId), c = ctBy('city', p.ci
 function viewCatalog() {
   if (!CT.data) { if (!CT.loading) loadCatalog(); return h('div', null, sectionHead(ta('nav.catalog'), ta('ct.lead')), h('p', { class: 'adm__empty', text: CT.err || ta('ct.loading') })); }
   if (CT.form) return ctForm();
-  const body = { projects: ctProjects, developers: ctDevelopers, places: ctPlaces, sync: ctSync }[CT.tab]();
+  const body = { projects: ctProjects, developers: ctDevelopers, places: ctPlaces, links: ctLinks, sync: ctSync }[CT.tab]();
   return h('div', null, sectionHead(ta('nav.catalog'), ta('ct.lead')), ctTabs(), body);
 }
 VIEWS.catalog = viewCatalog;
@@ -142,13 +146,14 @@ function ctProjects() {
     rows.length ? h('ul', { class: 'adm__list' }, rows) : h('p', { class: 'adm__empty', text: D.projects.length ? ta('ct.noMatch') : ta('ct.empty.projects') }),
     all.length > CT.limit ? h('p', { class: 'note', text: ta('ct.more', { n: fmtNum(CT.limit) }) }) : null);
 }
+const ctDevPlaces = (devId) => { const seen = new Set(); CT.data.projects.forEach((p) => { if (p.developerId === devId && p.cityId) seen.add(p.cityId); }); const names = [...seen].map((id) => (ctBy('city', id) || {}).name).filter(Boolean).sort((a, b) => a.localeCompare(b, App.lang)); return names.length ? ta('ct.l.in', { where: names.join(', ') }) : ''; };
 function ctDevelopers() {
   const D = CT.data, needle = CT.q.trim().toLowerCase(), count = {};
   D.projects.forEach((p) => { if (p.developerId) count[p.developerId] = (count[p.developerId] || 0) + 1; });
   const all = D.developers.filter((d) => !needle || d.name.toLowerCase().includes(needle));
   const rows = all.slice(0, CT.limit).map((d) => { const u = refUrl(d.logo);
     return h('li', { class: 'adm__li' }, h('div', { class: 'adm__thumb adm__thumb--sq' }, u ? h('img', { src: u, alt: '' }) : null),
-      h('div', { class: 'adm__li-main' }, h('strong', { text: d.name }), h('span', { class: 'note', text: ta('ct.projects', { n: fmtNum(count[d.id] || 0) }) })),
+      h('div', { class: 'adm__li-main' }, h('strong', { text: d.name }), h('span', { class: 'note', text: [ta('ct.projects', { n: fmtNum(count[d.id] || 0) }), ctDevPlaces(d.id)].filter(Boolean).join(' | ') })),
       h('button', { type: 'button', class: 'btn btn--small', onclick: () => ctOpen('developer', d.id), text: ta('f.edit') })); });
   return h('div', null, ctAdmin() ? h('div', { class: 'adm__row' }, addBtn(ta('ct.add.developer'), () => ctOpen('developer', null))) : null,
     h('div', { class: 'adm__filters' }, ctSearch(ta('ct.search'), drawAdmin)),
@@ -156,15 +161,51 @@ function ctDevelopers() {
     all.length > CT.limit ? h('p', { class: 'note', text: ta('ct.more', { n: fmtNum(CT.limit) }) }) : null);
 }
 function ctPlaces() {
-  const D = CT.data, blocks = D.cities.map((c) => {
+  const D = CT.data, perCity = {}, perArea = {};
+  D.projects.forEach((p) => { if (p.cityId) perCity[p.cityId] = (perCity[p.cityId] || 0) + 1; if (p.areaId) perArea[p.areaId] = (perArea[p.areaId] || 0) + 1; });
+  const blocks = D.cities.map((c) => {
     const areas = D.areas.filter((a) => a.cityId === c.id);
     return h('section', { class: 'adm__card adm__place' },
-      h('div', { class: 'adm__row adm__row--spread' }, h('div', null, h('strong', { text: c.name }), h('span', { class: 'note', text: c.region ? regionName(c.region) : ta('ct.noRegion') })),
+      h('div', { class: 'adm__row adm__row--spread' }, h('div', null, h('strong', { text: c.name }), h('span', { class: 'note', text: [c.region ? regionName(c.region) : ta('ct.noRegion'), ta('ct.l.areas', { n: fmtNum(areas.length) }), ta('ct.projects', { n: fmtNum(perCity[c.id] || 0) })].join(' | ') })),
         h('div', { class: 'adm__row' }, ctAdmin() ? h('button', { type: 'button', class: 'btn btn--small', onclick: () => ctOpen('area', null, { cityId: c.id }), text: ta('ct.add.area') }) : null,
           h('button', { type: 'button', class: 'btn btn--small', onclick: () => ctOpen('city', c.id), text: ta('f.edit') }))),
-      areas.length ? h('ul', { class: 'adm__list adm__list--tight' }, areas.map((a) => h('li', { class: 'adm__li' }, h('div', { class: 'adm__li-main' }, h('span', { text: a.name })), h('button', { type: 'button', class: 'btn btn--small', onclick: () => ctOpen('area', a.id), text: ta('f.edit') })))) : null);
+      areas.length ? h('ul', { class: 'adm__list adm__list--tight' }, areas.map((a) => h('li', { class: 'adm__li' }, h('div', { class: 'adm__li-main' }, h('span', { text: a.name }), h('span', { class: 'note', text: ta('ct.projects', { n: fmtNum(perArea[a.id] || 0) }) })), h('button', { type: 'button', class: 'btn btn--small', onclick: () => ctOpen('area', a.id), text: ta('f.edit') })))) : null);
   });
   return h('div', null, ctAdmin() ? h('div', { class: 'adm__row' }, addBtn(ta('ct.add.city'), () => ctOpen('city', null))) : null, blocks.length ? h('div', { class: 'adm__stack' }, blocks) : h('p', { class: 'adm__empty', text: ta('ct.empty.places') }));
+}
+
+/* ---------- links: governorate > area > project, or developer > project ---------- */
+function ctLinks() {
+  const D = CT.data, needle = CT.q.trim().toLowerCase(), units = {}, byName = (a, b) => String(a.name).localeCompare(String(b.name), App.lang);
+  D.units.forEach((u) => { if (u.projectId) units[u.projectId] = (units[u.projectId] || 0) + 1; });
+  const shown = D.projects.filter((p) => !needle || ctText(p.name, ctDevName(p.developerId), ctWhere(p)).includes(needle));
+  const row = (p, note) => h('li', { class: 'adm__li' },
+    h('div', { class: 'adm__li-main' }, h('span', { text: p.name }), h('span', { class: 'note', text: [note, ta('ct.units', { n: fmtNum(units[p.id] || 0) }), p.active === false ? ta('ct.inactive') : ''].filter(Boolean).join(' | ') })),
+    h('button', { type: 'button', class: 'btn btn--small', onclick: () => ctOpen('project', p.id), text: ta('f.edit') }));
+  const open = needle || CT.openAll === 'open' ? true : CT.openAll === 'closed' ? false : D.projects.length <= 40;
+  const group = (title, meta, children) => h('details', { class: 'adm__card adm__place', open: open ? '' : null }, h('summary', { class: 'adm__sum' }, h('strong', { text: title }), h('span', { class: 'note', text: meta })), children);
+  const blocks = [];
+  if (CT.by === 'dev') {
+    D.developers.slice().sort(byName).forEach((d) => { const ps = shown.filter((p) => p.developerId === d.id).sort(byName); if (ps.length) blocks.push(group(d.name, [ta('ct.projects', { n: fmtNum(ps.length) }), ctDevPlaces(d.id)].filter(Boolean).join(' | '), h('ul', { class: 'adm__list adm__list--tight' }, ps.map((p) => row(p, ctWhere(p)))))); });
+    const none = shown.filter((p) => !p.developerId || !ctBy('developer', p.developerId)).sort(byName);
+    if (none.length) blocks.push(group(ta('ct.l.noDev'), ta('ct.projects', { n: fmtNum(none.length) }), h('ul', { class: 'adm__list adm__list--tight' }, none.map((p) => row(p, ctWhere(p))))));
+  } else {
+    const cityIds = D.cities.map((c) => c.id);
+    D.cities.slice().sort(byName).concat([{ id: '', name: ta('ct.l.noCity') }]).forEach((c) => {
+      const ps = shown.filter((p) => c.id ? p.cityId === c.id : !p.cityId || !cityIds.includes(p.cityId)); if (!ps.length) return;
+      const areas = D.areas.filter((a) => a.cityId === c.id).sort(byName), inner = [];
+      areas.forEach((a) => { const ap = ps.filter((p) => p.areaId === a.id).sort(byName); if (ap.length) inner.push(h('li', { class: 'adm__sub' }, h('div', { class: 'adm__row adm__row--spread' }, h('strong', { text: a.name }), h('span', { class: 'note', text: ta('ct.projects', { n: fmtNum(ap.length) }) })), h('ul', { class: 'adm__list adm__list--tight' }, ap.map((p) => row(p, ctDevName(p.developerId) || ta('ct.l.noDev')))))); });
+      const loose = ps.filter((p) => !areas.some((a) => a.id === p.areaId)).sort(byName);
+      if (loose.length) inner.push(h('li', { class: 'adm__sub' }, h('div', { class: 'adm__row adm__row--spread' }, h('strong', { text: ta('ct.l.noArea') }), h('span', { class: 'note', text: ta('ct.projects', { n: fmtNum(loose.length) }) })), h('ul', { class: 'adm__list adm__list--tight' }, loose.map((p) => row(p, ctDevName(p.developerId) || ta('ct.l.noDev'))))));
+      blocks.push(group(c.name, [c.region ? regionName(c.region) : '', ta('ct.projects', { n: fmtNum(ps.length) })].filter(Boolean).join(' | '), h('ul', { class: 'adm__list adm__list--tight' }, inner)));
+    });
+  }
+  const setAll = (v) => () => { CT.openAll = v; drawAdmin(); };
+  return h('div', null, h('p', { class: 'note', text: ta('ct.l.hint') }),
+    h('div', { class: 'adm__filters' }, ctSearch(ta('ct.search'), drawAdmin),
+      ctSel(ta('ct.l.by'), ta('ct.l.by') + ': ' + ta('ct.l.byCity'), [['dev', ta('ct.l.by') + ': ' + ta('ct.l.byDev')]], CT.by === 'dev' ? 'dev' : '', (v) => { CT.by = v === 'dev' ? 'dev' : 'city'; drawAdmin(); }),
+      h('button', { type: 'button', class: 'btn btn--small', onclick: setAll('open'), text: ta('ct.l.expand') }), h('button', { type: 'button', class: 'btn btn--small', onclick: setAll('closed'), text: ta('ct.l.collapse') })),
+    blocks.length ? h('div', { class: 'adm__stack' }, blocks) : h('p', { class: 'adm__empty', text: D.projects.length ? ta('ct.noMatch') : ta('ct.l.empty') }));
 }
 
 /* ---------- one record: the CRM's part and the site's part, saved separately ---------- */

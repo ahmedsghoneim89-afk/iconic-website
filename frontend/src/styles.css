@@ -524,7 +524,7 @@ html.no-webgl .hero__sticky::before{background:linear-gradient(to top,rgba(5,5,7
 .gal__bar{position:absolute;inset-inline:0;inset-block-end:0;display:flex;justify-content:center;gap:.25rem;padding:.3rem;background:linear-gradient(transparent,rgba(5,5,7,.85))}
 .gal__bar button{width:2rem;height:2rem;border-radius:50%;border:1px solid var(--c-line);background:rgba(5,5,7,.7);cursor:pointer}
 .gal__bar button:disabled{opacity:.35;cursor:default}
-/* catalog (developers, projects, cities, areas) */
+/* developers, projects, governorates, areas */
 .adm__tabs{display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:var(--s-5);border-bottom:var(--b-soft)}
 .adm__tab{background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 1rem;color:var(--c-ivory-300);cursor:pointer;margin-bottom:-1px}
 .adm__tab:hover{color:var(--c-ivory-100)}
@@ -535,6 +535,16 @@ html.no-webgl .hero__sticky::before{background:linear-gradient(to top,rgba(5,5,7
 .adm__stack{display:grid;gap:var(--s-4)}
 .adm__wide{justify-items:stretch}
 .adm__place{justify-items:stretch}
+.adm__sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:.3rem var(--s-3);cursor:pointer;list-style:none}
+.adm__sum strong{font-size:1.05rem}
+.adm__sum::-webkit-details-marker{display:none}
+.adm__sum::before{content:'\203A';color:var(--c-gold-400);display:inline-block;width:1rem;transition:transform var(--dur-fast)}
+.adm__sum:dir(rtl)::before{content:'\2039'}
+details[open]>.adm__sum::before{transform:rotate(90deg)}
+details.adm__place[open]>.adm__sum{margin-bottom:var(--s-3)}
+.adm__sub{list-style:none;padding:var(--s-2) 0 var(--s-3);border-top:var(--b-soft)}
+.adm__sub>.adm__row{margin-bottom:0}
+.adm__sub .adm__list{padding-inline-start:var(--s-4)}
 .adm__list--tight .adm__li{padding:.5rem 0}
 .adm__kvs{display:grid;gap:0;margin:0;width:100%}
 .adm__kv{display:grid;grid-template-columns:minmax(9rem,14rem) minmax(0,1fr);gap:var(--s-4);padding:.55rem 0;border-bottom:var(--b-soft)}
