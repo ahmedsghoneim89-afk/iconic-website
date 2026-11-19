@@ -9,7 +9,7 @@ trap cleanup EXIT
 command -v mongod >/dev/null || { echo "mongod not found on this machine"; exit 3; }
 (echo > /dev/tcp/127.0.0.1/$PORT) 2>/dev/null && { echo "port $PORT is already in use; set MONGO_TEST_PORT"; exit 3; }
 mkdir -p "$T/db" "$T/stage"
-mongod --dbpath "$T/db" --port "$PORT" --bind_ip 127.0.0.1 --nounixsocket --fork --logpath "$T/mongod.log" --pidfilepath "$T/mongod.pid" >/dev/null || { tail -5 "$T/mongod.log"; exit 3; }
+mongod --dbpath "$T/db" --port "$PORT" --bind_ip 127.0.0.1 --nounixsocket --wiredTigerCacheSizeGB 0.25 --fork --logpath "$T/mongod.log" --pidfilepath "$T/mongod.pid" >/dev/null || { tail -5 "$T/mongod.log"; exit 3; }
 cp -a "$CRM/src" "$T/stage/src"; rm -rf "$T/stage/src/websiteSync"; cp -a "$HERE/websiteSync" "$T/stage/src/websiteSync"
 cp "$CRM/package.json" "$T/stage/package.json"; ln -s "$CRM/node_modules" "$T/stage/node_modules"
 cp "$HERE"/test/test.mjs "$HERE"/test/child.mjs "$T/stage/"

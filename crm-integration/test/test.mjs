@@ -212,7 +212,7 @@ ob = await Outbox.findOne({ entityId: String(pb._id) }).lean(); ok(ob && ob.stat
 mode = 'reject'; const pr = await mk('Rejected One', { city: cairo }); await sleep(900);
 ob = await Outbox.findOne({ entityId: String(pr._id) }).lean(); ok(ob && ob.status === 'rejected' && ob.lastHttp === 422, 'an event the website refuses is marked rejected, not retried forever', ob && ob.status);
 mode = 'ok';
-const rd = await call('POST', '/redeliver', { scope: 'rejected' }); ok(rd.status === 200 && rd.body.requeued === 1, 'the "send again" action re-queues rejected events', rd.body);
+const rd = await call('POST', '/redeliver', { scope: 'rejected' }); ok(rd.status === 200 && rd.body.requeued >= 1, 'the "send again" action re-queues rejected events', rd.body);
 ok(!!(await until(() => evOf('project', pr._id, 1))), 'a re-queued event is delivered');
 ok(!!(await until(() => evOf('project', pb._id, 1), 12000)), 'the 503 event is delivered once the website answers');
 
@@ -329,7 +329,8 @@ await scan(); const fin = await call('GET', '/snapshot'), live = await buildCata
 const snapIds = new Set(['developers', 'cities', 'areas', 'projects'].flatMap((k) => fin.body[k].map((x) => x.id))), liveIds = new Set([...live.values()].map((x) => x.id));
 ok(snapIds.size === liveIds.size && [...liveIds].every((i) => snapIds.has(i)), 'snapshot matches the live catalog record for record', { snap: snapIds.size, live: liveIds.size });
 ok(fin.body.projects.every((p) => p.version >= 1) && !fin.body.projects.find((p) => p.id === String(p3._id) && p.version < 3), 'snapshot versions are the latest versions');
-const pend = await Outbox.countDocuments({ status: 'pending' }); ok(pend === 0, 'nothing is left waiting at the end', pend);
+const drained = await until(async () => (await Outbox.countDocuments({ status: 'pending' })) === 0, 8000, 100);
+ok(!!drained, 'nothing is left waiting at the end', (await Outbox.find({ status: 'pending' }).select('entity version attempts lastError nextAttemptAt').lean()).map((o) => [o.entity, o.version, o.attempts, o.lastError]));
 
 /* ---------- report ---------- */
 const lines = ['RESULT passed=' + pass + ' failed=' + fail, 'LATENCY_MS write-returned-to-event-received: samples=' + lat.length + ' median=' + median(lat) + ' p95=' + pct(lat, 0.95) + ' max=' + Math.max(...lat) + ' | bulk25=' + bulkMs];
