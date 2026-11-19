@@ -38,13 +38,48 @@ function make(lang, snap) {
   const teamRegions = (x) => (Array.isArray(x.regions) && x.regions.length ? x.regions : (x.region ? [x.region] : [])).filter((r) => REGIONS.some((g) => g.id === r)).sort((a, b) => regionRank(a) - regionRank(b));
   const regionsLabel = (ids) => ids.map(regionName).filter(Boolean).join(lang === 'ar' ? '، ' : ', ');
   const teams = raw.teams.map((x) => { const regions = teamRegions(x); return { id: x.id, regions, region: regions[0] || '', name: L(x.name) }; });
+  /* ICONIC CRM catalog. Names and links come from the CRM; descriptions, images and SEO text come from this site.
+     An inactive project is kept out of the public lists and its page is gone; a project deleted in the CRM is not known here at all. */
+  const live = (a) => (a || []).filter((x) => !x.crmDeleted && x.slug && x.name);
+  const byName = (a, b) => (a.order == null ? 100 : a.order) - (b.order == null ? 100 : b.order) || a.name.localeCompare(b.name, lang);
+  const cities = live(raw.cities).map((r) => ({ id: r.crmId, slug: r.slug, name: r.name, region: REGIONS.some((g) => g.id === r.region) ? r.region : '', description: L(r.description), order: r.order })).sort(byName);
+  const cityById = new Map(cities.map((x) => [x.id, x]));
+  const areas = live(raw.areas).filter((r) => cityById.has(r.cityId)).map((r) => ({
+    id: r.crmId, slug: r.slug, name: r.name, cityId: r.cityId, city: cityById.get(r.cityId), url: '/' + lang + '/areas/' + r.slug, description: L(r.description), images: (r.images || []).map(imgPath).filter(Boolean),
+    seoTitle: L(r.seoTitle), seoDescription: L(r.seoDescription), order: r.order, updatedAt: r._u || 0
+  })).sort(byName);
+  const areaById = new Map(areas.map((x) => [x.id, x]));
+  const developers = live(raw.developers).map((r) => ({
+    id: r.crmId, slug: r.slug, name: r.name, url: '/' + lang + '/developers/' + r.slug, description: L(r.description), logo: imgPath(r.logo), seoTitle: L(r.seoTitle), seoDescription: L(r.seoDescription), order: r.order, updatedAt: r._u || 0
+  })).sort(byName);
+  const developerById = new Map(developers.map((x) => [x.id, x]));
+  const projects = live(raw.projects).filter((r) => cityById.has(r.cityId)).map((r) => {
+    const city = cityById.get(r.cityId), a = areaById.get(r.areaId), developer = developerById.get(r.developerId) || null;
+    return {
+      id: r.crmId, slug: r.slug, name: r.name, active: r.active !== false, url: '/' + lang + '/projects/' + r.slug, developer, city, area: a && a.cityId === r.cityId ? a : null, region: city.region,
+      description: L(r.description), images: (r.images || []).map(imgPath).filter(Boolean), seoTitle: L(r.seoTitle), seoDescription: L(r.seoDescription), order: r.order, updatedAt: r._u || 0
+    };
+  }).sort(byName);
+  const projectById = new Map(projects.map((x) => [x.id, x]));
+  const shownProjects = projects.filter((x) => x.active);
+  const catalog = { cities, areas, developers, projects, shownProjects, cityById, areaById, developerById, projectById };
+
+  /* the 3D home page draws from the stored documents; give it the same project-derived values the other pages use */
+  const rawProps = raw.properties.map((p) => {
+    const pr = p.projectId ? projectById.get(p.projectId) : null; if (!pr) return p;
+    const where = pr.area ? pr.area.name : pr.city.name;
+    return Object.assign({}, p, { region: pr.region || p.region, project: { en: pr.name, ar: pr.name }, location: { en: where, ar: where } });
+  });
   const props = raw.properties.map((p) => {
     const area = p.area != null && p.area !== '' ? Number(p.area) : null;
+    const pr = p.projectId ? projectById.get(p.projectId) : null;   // a unit linked to a project takes developer, area and region from it
     return {
-      id: p.id, slug: p.slug || '', url: '/' + lang + '/property/' + p.slug, region: p.region, type: p.type, purpose: p.purpose, agent: p.agent || null,
+      id: p.id, slug: p.slug || '', url: '/' + lang + '/property/' + p.slug, region: (pr && pr.region) || p.region, type: p.type, purpose: p.purpose, agent: p.agent || null,
       price: p.price == null ? null : Number(p.price), currency: p.currency || 'EGP', beds: p.beds == null ? null : Number(p.beds), baths: p.baths == null ? null : Number(p.baths),
       areaNum: area, area: area ? fmtNum(area) + ' ' + t('unit.sqm') : '',
-      title: L(p.title), project: L(p.project), location: L(p.location), description: L(p.description), seoTitle: L(p.seoTitle), seoDescription: L(p.seoDescription),
+      title: L(p.title), project: pr ? pr.name : L(p.project), location: pr ? (pr.area ? pr.area.name : pr.city.name) : L(p.location),
+      projectId: pr ? pr.id : '', projectUrl: pr && pr.active ? pr.url : '', developerId: pr && pr.developer ? pr.developer.id : '', cityId: pr ? pr.city.id : '', areaId: pr && pr.area ? pr.area.id : '',
+      description: L(p.description), seoTitle: L(p.seoTitle), seoDescription: L(p.seoDescription),
       images: (p.images || []).map(imgPath).filter(Boolean), updatedAt: p._u || 0
     };
   }).filter((p) => p.slug);
@@ -55,7 +90,7 @@ function make(lang, snap) {
     id: j.id, slug: j.slug, url: '/' + lang + '/careers/' + j.slug, title: L(j.title), department: L(j.department), location: L(j.location), type: j.type || 'full', typeLabel: jobTypeLabel(j.type || 'full'),
     description: L(j.description), requirements: L(j.requirements), posted: j.posted || '', closes: j.closes || '', updatedAt: j._u || 0
   })).filter((j) => j.title);
-  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, regionsLabel, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, branches, jobs, today, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
+  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, regionsLabel, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, rawProps, catalog, branches, jobs, today, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
 }
 
 const waNumber = (v) => { let n = String(v || '').replace(/\D/g, ''); if (/^01\d{9}$/.test(n)) n = '20' + n.slice(1); return n; };

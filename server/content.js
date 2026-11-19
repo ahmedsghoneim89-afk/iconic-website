@@ -2,7 +2,7 @@
 /* Reads and writes content documents and builds the snapshot the pages are drawn from. */
 const store = require('./db');
 const { validate, readable } = require('./schema');
-const { slugBase } = require('./util');
+const { slugBase, httpError } = require('./util');
 
 const SITE_IDS = ['company', 'texts', 'hotspots', 'about', 'layout', 'regions'];
 let cache = null, cacheVersion = -1;
@@ -29,6 +29,12 @@ function slugFor(id, data, fallback) {
 function write(col, id, body) {
   const data = validate(col, id, body);
   if (col === 'properties') { const prev = store.getDoc(col, id); data.slug = (prev && prev.data.slug) || slugFor(id, data); }   // a unit keeps its address even when its title changes
+  if (col === 'properties' && data.projectId) {   // a unit linked to a CRM project takes its website region from the project's city
+    const pr = store.getDoc('projects', 'p_' + data.projectId);
+    if (!pr || pr.data.crmDeleted) throw httpError(422, 'unknown project');
+    const city = store.getDoc('cities', 'c_' + pr.data.cityId);
+    if (city && !city.data.crmDeleted && city.data.region) data.region = city.data.region;
+  }
   if (col === 'jobs') {   // a job keeps its address and its first publishing date
     const prev = store.getDoc(col, id);
     data.slug = (prev && prev.data.slug) || slugFor(id, data, 'job'); data.posted = (prev && prev.data.posted) || new Date().toISOString().slice(0, 10);

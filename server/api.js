@@ -7,6 +7,7 @@ const auth = require('./auth');
 const content = require('./content');
 const applications = require('./applications');
 const catalog = require('./catalog');
+const catalogAdmin = require('./catalog_admin');
 const { readJson, readBody, sha } = require('./util');
 
 const { db } = store;
@@ -149,6 +150,10 @@ async function handle(req, res, url) {
   /* ---- ICONIC CRM catalog ---- */
   if (seg[0] === 'catalog') {
     if (seg[1] === 'status' && m === 'GET') { need(s, CONTENT_WRITERS); return json(res, 200, catalog.status()); }
+    if (seg[1] === 'crm-status' && m === 'GET') { need(s, CONTENT_WRITERS); return json(res, 200, await catalog.crmStatus()); }
+    if (seg[1] === 'crm-redeliver' && m === 'POST') { need(s, ['admin']); const b = await readJson(req, 4096); return json(res, 200, await catalog.crmRedeliver(b && b.scope, s.email)); }
+    if (seg[1] === 'all' && m === 'GET') { need(s, CONTENT_WRITERS); return json(res, 200, catalogAdmin.all()); }
+    if (seg[1] === 'link-units' && m === 'POST') { need(s, ['admin']); const b = await readJson(req, 4096); return json(res, 200, catalogAdmin.linkUnits({ apply: b && b.apply === true })); }
     if (seg[1] === 'reconcile' && m === 'POST') { need(s, ['admin']); return json(res, 200, await catalog.reconcile('admin:' + s.email)); }
     const entity = seg[1], id = seg[2];
     if (catalog.ENTITIES.includes(entity)) {

@@ -8,7 +8,7 @@ function restClient(csrf) {
     if (raw) headers['Content-Type'] = raw.type; else if (body !== undefined) headers['Content-Type'] = 'application/json';
     const res = await fetch('/iconic-api' + path, { method, credentials: 'same-origin', headers, body: raw ? raw.body : (body !== undefined ? JSON.stringify(body) : undefined) });
     if (res.status === 404 && method === 'GET') return null;
-    if (!res.ok) { const e = new Error('http ' + res.status); e.code = res.status; try { e.serverMessage = (await res.json()).error || ''; } catch (_) { e.serverMessage = ''; } throw e; }
+    if (!res.ok) { const e = new Error('http ' + res.status); e.code = res.status; try { const j = await res.json(); e.serverMessage = j.error || ''; e.payload = j; } catch (_) { e.serverMessage = ''; } throw e; }
     return res.status === 204 ? null : res.json();
   };
   const refresh = () => subs.forEach((f) => f());

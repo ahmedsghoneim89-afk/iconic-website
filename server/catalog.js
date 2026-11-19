@@ -249,6 +249,17 @@ function status() {
   };
 }
 
+/* ---- the CRM's own delivery queue, for the dashboard ---- */
+async function crmStatus() {
+  try { const r = await crmCall('GET', '/status'); if (r.status === 200 && r.json && r.json.ok) { const { ok, ...rest } = r.json; return Object.assign({ reachable: true }, rest); } return { reachable: false, error: 'The CRM answered ' + r.status }; }
+  catch (e) { return { reachable: false, error: e.message }; }
+}
+async function crmRedeliver(scope, who) {
+  const r = await crmCall('POST', '/redeliver', { scope: scope === 'all' ? 'all' : 'rejected' });
+  if (r.status !== 200 || !r.json || r.json.ok !== true) throw httpError(502, 'The CRM could not re-send (' + r.status + ')');
+  log('redeliver', true, (scope === 'all' ? 'all' : 'refused') + ': ' + r.json.requeued + ' by ' + (who || '?')); return { requeued: r.json.requeued };
+}
+
 /* ---- start-up: take the CRM's list once, then keep a slow safety check running in case an event was ever missed ---- */
 let timers = [];
 function startLink() {
@@ -259,4 +270,4 @@ function startLink() {
 }
 function stopLink() { timers.forEach((t) => { clearTimeout(t); clearInterval(t); }); timers = []; }
 
-module.exports = { ENTITIES, COL, PREFIX, CRM_FIELDS, cleanRecord, applyRaw, handleEvent, receive, reconcile, edit, siteUpdate, status, startLink, stopLink, sign, verify, suggestRegion, makeSlug, docView, CATALOG_COLLECTIONS };
+module.exports = { crmStatus, crmRedeliver, log, getState, setState, ENTITIES, COL, PREFIX, CRM_FIELDS, cleanRecord, applyRaw, handleEvent, receive, reconcile, edit, siteUpdate, status, startLink, stopLink, sign, verify, suggestRegion, makeSlug, docView, CATALOG_COLLECTIONS };

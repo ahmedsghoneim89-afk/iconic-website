@@ -14,6 +14,7 @@ const Ctx = require('./render/ctx');
 const Pages = require('./render/pages');
 const { homePage } = require('./render/home');
 const SEO = require('./render/seo');
+const CP = require('./render/catalog_pages');
 const T = require('./render/templates');
 
 const LANGS = ['ar', 'en'];
@@ -60,6 +61,7 @@ function cached(key, build) {
   if (!e) { const r = build(); e = { html: r.html, status: r.status || 200, csp: csp(r.inline || []), etag: '"' + sha(r.html, 20) + '"' }; if (cache.size > 800) cache.clear(); cache.set(key, e); }
   return e;
 }
+const fkey = (f) => [f.developer, f.project, f.area, f.city].map((x) => (x ? x.id : '')).join('-');
 const ctxFor = (lang) => Ctx.make(lang, content.snapshot());
 function sendPage(req, res, e) {
   if (req.headers['if-none-match'] === e.etag && e.status === 200) { res.writeHead(304, Object.assign(baseHeaders(), { ETag: e.etag, 'Cache-Control': 'no-cache' })); return res.end(); }
@@ -129,7 +131,28 @@ async function route(req, res) {
     const bot = BOT.test(String(req.headers['user-agent'] || ''));
     return sendPage(req, res, cached('home:' + lang + (bot ? ':bot' : ''), () => homePage(ctxFor(lang), { bot })));
   }
-  if (seg[1] === 'properties' && seg.length === 2) return sendPage(req, res, cached('props:' + lang, () => ({ html: Pages.propertiesPage(ctxFor(lang)) })));
+  if (seg[1] === 'properties' && seg.length === 2) {
+    const f = CP.resolveFilters(ctxFor(lang), url.searchParams);
+    return sendPage(req, res, cached('props:' + lang + ':' + fkey(f), () => ({ html: CP.propertiesPage(ctxFor(lang), f) })));   // a filtered view is kept out of search engines
+  }
+  /* ICONIC CRM catalog pages. A project that is inactive or gone, or a record this site does not know, is a 404. */
+  if (seg[1] === 'developers' && seg.length === 2) return sendPage(req, res, cached('devs:' + lang, () => ({ html: CP.developersPage(ctxFor(lang)) })));
+  if (seg[1] === 'developers' && seg.length === 3) {
+    if (!ctxFor(lang).catalog.developers.some((x) => x.slug === seg[2])) return notFound(req, res, lang);
+    return sendPage(req, res, cached('dev:' + lang + ':' + seg[2], () => { const c = ctxFor(lang); return { html: CP.developerPage(c, c.catalog.developers.find((x) => x.slug === seg[2])) }; }));
+  }
+  if (seg[1] === 'projects' && seg.length === 2) {
+    const f = CP.resolveFilters(ctxFor(lang), url.searchParams);
+    return sendPage(req, res, cached('projs:' + lang + ':' + fkey(f), () => ({ html: CP.projectsPage(ctxFor(lang), f) })));
+  }
+  if (seg[1] === 'projects' && seg.length === 3) {
+    if (!ctxFor(lang).catalog.shownProjects.some((x) => x.slug === seg[2])) return notFound(req, res, lang);
+    return sendPage(req, res, cached('proj:' + lang + ':' + seg[2], () => { const c = ctxFor(lang); return { html: CP.projectPage(c, c.catalog.shownProjects.find((x) => x.slug === seg[2])) }; }));
+  }
+  if (seg[1] === 'areas' && seg.length === 3) {
+    if (!ctxFor(lang).catalog.areas.some((x) => x.slug === seg[2])) return notFound(req, res, lang);
+    return sendPage(req, res, cached('area:' + lang + ':' + seg[2], () => { const c = ctxFor(lang); return { html: CP.areaPage(c, c.catalog.areas.find((x) => x.slug === seg[2])) }; }));
+  }
   if (seg[1] === 'properties' && seg.length === 3) {
     if (!REGION_IDS.includes(seg[2])) return notFound(req, res, lang);
     return sendPage(req, res, cached('region:' + lang + ':' + seg[2], () => ({ html: Pages.regionPage(ctxFor(lang), seg[2]) })));

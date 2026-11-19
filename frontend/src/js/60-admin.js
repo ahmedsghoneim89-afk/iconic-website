@@ -108,7 +108,7 @@ function ask(message, okLabel) {
 
 /* ---------- form kit ---------- */
 function fieldWrap(label, control, hint, err) { return h('div', { class: 'af' }, h('label', { class: 'af__l' }, label), control, hint ? h('small', { class: 'af__h', text: hint }) : null, err); }
-function input(name, value, o = {}) { return h('input', { class: 'ai', name, type: o.type || 'text', value: value == null ? '' : value, dir: o.dir, placeholder: o.ph, inputmode: o.im, autocomplete: 'off', min: o.min, step: o.step }); }
+function input(name, value, o = {}) { return h('input', { class: 'ai', name, type: o.type || 'text', value: value == null ? '' : value, dir: o.dir, placeholder: o.ph, inputmode: o.im, autocomplete: 'off', min: o.min, step: o.step, disabled: o.disabled }); }
 function select(name, options, value, o = {}) {
   const s = h('select', { class: 'ai', name }, o.blank ? h('option', { value: '', text: o.blank }) : null, options.map(([v, l]) => h('option', { value: v, text: l })));
   s.value = value == null ? '' : value; return s;
@@ -196,7 +196,7 @@ function formShell(title, fields, onSave, onCancel, onDelete) {
     e.preventDefault(); status.textContent = '';
     const data = onSave.collect(f); if (!data) return;
     save.disabled = true; save.textContent = ta('f.saving');
-    try { await onSave.write(data); AS.dirty = false; toast(ta('f.saved')); } catch (err) { console.warn(err); status.textContent = ta('f.failed'); save.disabled = false; save.textContent = ta('f.save'); }
+    try { const done = await onSave.write(data); AS.dirty = false; toast(typeof done === 'string' ? done : ta('f.saved')); } catch (err) { console.warn(err); status.textContent = (err && err.userMessage) || ta('f.failed'); save.disabled = false; save.textContent = ta('f.save'); }
   });
   return f;
 }
@@ -353,7 +353,7 @@ function viewUnits() {
   const rows = list.map((p) => {
     const ag = p.agent ? rawOf('agents', p.agent) : null, cover = refUrl((p.images || [])[0]);
     return h('li', { class: 'adm__li' }, h('div', { class: 'adm__thumb adm__thumb--sq' }, cover ? h('img', { src: cover, alt: '' }) : null),
-      h('div', { class: 'adm__li-main' }, h('strong', { text: nameOf(p.title) }), h('span', { class: 'note', text: [L(p.project), regionName(p.region), typeLabel(p.type), purposeLabel(p.purpose)].filter(Boolean).join(' | ') }), h('span', { class: 'note', text: ag ? nameOf(ag.name) : ta('un.unassigned') })),
+      h('div', { class: 'adm__li-main' }, h('strong', { text: nameOf(p.title) }), h('span', { class: 'note', text: [unitProjectName(p), regionName(unitRegion(p)), typeLabel(p.type), purposeLabel(p.purpose)].filter(Boolean).join(' | ') }), h('span', { class: 'note', text: ag ? nameOf(ag.name) : ta('un.unassigned') })),
       h('button', { type: 'button', class: 'btn btn--small', onclick: () => { AS.form = { kind: 'unit', id: p.id }; drawAdmin(); }, text: ta('f.edit') }));
   });
   return h('div', null, sectionHead(ta('un.title'), ta('un.lead'), addBtn(ta('un.add'), () => { AS.form = { kind: 'unit', id: null }; drawAdmin(); })),
@@ -369,7 +369,7 @@ function unitForm(id) {
   const agentOpts = Store.raw.agents.map((a) => { const tm = rawOf('teams', a.team); return [a.id, nameOf(a.name) + (tm ? ' — ' + regionsLabel(teamRegions(tm)) : '')]; });
   const num = (name, label, v, step) => fieldWrap(label, input(name, v == null ? '' : v, { type: 'number', min: '0', step: step || '1', im: 'decimal' }));
   const f = formShell('', [
-    bil('title', ta('un.name'), r && r.title, false), bil('project', ta('un.project'), r && r.project, false),
+    bil('title', ta('un.name'), r && r.title, false), ...(SERVER ? [catalogProjectField(r)] : []), bil('project', ta('un.project'), r && r.project, false),
     h('div', { class: 'af__row' },
       fieldWrap(ta('un.region'), select('region', regionOptions(), r ? r.region : (AS.filters.region || ''), { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'region' })),
       fieldWrap(ta('un.type'), select('type', TYPES.map(([k, l]) => [k, l[App.lang]]), r ? r.type : '', { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'type' })),
@@ -385,8 +385,9 @@ function unitForm(id) {
     collect: (f) => {
       const v = (n) => f.elements[n].value, title = readBil(f, 'title'); let bad = false;
       bad = setErr(f, 'title', hasAny(title) ? '' : ta('f.reqAny')) || bad;
-      ['region', 'type', 'purpose'].forEach((k) => { bad = setErr(f, k, v(k) ? '' : ta('f.req')) || bad; });
-      return bad ? null : { title, project: readBil(f, 'project'), region: v('region'), type: v('type'), purpose: v('purpose'), location: readBil(f, 'location'), agent: v('agent') || '', price: numOrNull(v('price')), currency: v('currency') || 'EGP', beds: numOrNull(v('beds')), baths: numOrNull(v('baths')), area: numOrNull(v('area')), description: readBil(f, 'description'), images: gal.v, order: numOrNull(v('order')), ...(SERVER ? { seoTitle: readBil(f, 'seoTitle'), seoDescription: readBil(f, 'seoDescription') } : {}) };
+      const pj = f.elements.projectId && v('projectId') ? catalogProject(v('projectId')) : null, derived = pj ? catalogRegion(pj) : '';
+      ['region', 'type', 'purpose'].forEach((k) => { if (k === 'region' && derived) { setErr(f, k, ''); return; } bad = setErr(f, k, v(k) ? '' : ta('f.req')) || bad; });
+      return bad ? null : { title, project: readBil(f, 'project'), projectId: f.elements.projectId ? v('projectId') : ((r && r.projectId) || ''), region: derived || v('region'), type: v('type'), purpose: v('purpose'), location: readBil(f, 'location'), agent: v('agent') || '', price: numOrNull(v('price')), currency: v('currency') || 'EGP', beds: numOrNull(v('beds')), baths: numOrNull(v('baths')), area: numOrNull(v('area')), description: readBil(f, 'description'), images: gal.v, order: numOrNull(v('order')), ...(SERVER ? { seoTitle: readBil(f, 'seoTitle'), seoDescription: readBil(f, 'seoDescription') } : {}) };
     },
     write: async (d) => { await dbSet('properties', id || newId('p'), d); AS.form = null; drawAdmin(); }
   }, () => { AS.form = null; drawAdmin(); }, del);
@@ -429,7 +430,7 @@ function drawAdmin() {
 /* snapshots and language changes redraw the open dashboard, unless someone is typing in a form */
 function adminRefresh() {
   if (!AS.open || !admEl) return;
-  if (AS.form || AS.dirty) { drawChrome(); return; }
+  if (AS.form || AS.dirty || (AS.sec === 'catalog' && CT.form)) { drawChrome(); return; }
   const y = admBody.scrollTop; drawAdmin(); admBody.scrollTop = y;
 }
 function buildAdmin() {
@@ -446,7 +447,7 @@ function openAdmin() {
   if (!Store.canEdit) return;
   if (!admEl) buildAdmin();
   if (!SECTIONS.includes(AS.sec)) AS.sec = SECTIONS[0];
-  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); }
+  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); loadCatalog(); }
   $('.adm__nav button[aria-current=true]', admEl).focus({ preventScroll: true });
 }
 function closeAdmin() { if (!admEl) return; AS.open = false; admEl.hidden = true; root.style.overflow = ''; if (location.hash === '#admin') { try { history.replaceState(null, '', location.pathname + location.search); } catch (_) { /* ignore */ } } }

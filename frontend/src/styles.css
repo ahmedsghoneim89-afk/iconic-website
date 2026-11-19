@@ -517,6 +517,30 @@ html.no-webgl .hero__sticky::before{background:linear-gradient(to top,rgba(5,5,7
 .gal__bar{position:absolute;inset-inline:0;inset-block-end:0;display:flex;justify-content:center;gap:.25rem;padding:.3rem;background:linear-gradient(transparent,rgba(5,5,7,.85))}
 .gal__bar button{width:2rem;height:2rem;border-radius:50%;border:1px solid var(--c-line);background:rgba(5,5,7,.7);cursor:pointer}
 .gal__bar button:disabled{opacity:.35;cursor:default}
+/* catalog (developers, projects, cities, areas) */
+.adm__tabs{display:flex;flex-wrap:wrap;gap:.2rem;margin-bottom:var(--s-5);border-bottom:var(--b-soft)}
+.adm__tab{background:none;border:0;border-bottom:2px solid transparent;padding:.6rem 1rem;color:var(--c-ivory-300);cursor:pointer;margin-bottom:-1px}
+.adm__tab:hover{color:var(--c-ivory-100)}
+.adm__tab[aria-selected=true]{color:var(--c-gold-300);border-bottom-color:var(--c-gold-400)}
+.adm__row--spread{justify-content:space-between;width:100%}
+.adm__row--spread>div:first-child{display:flex;flex-direction:column;gap:.1rem}
+.adm__row{margin-bottom:var(--s-3)}
+.adm__stack{display:grid;gap:var(--s-4)}
+.adm__wide{justify-items:stretch}
+.adm__place{justify-items:stretch}
+.adm__list--tight .adm__li{padding:.5rem 0}
+.adm__kvs{display:grid;gap:0;margin:0;width:100%}
+.adm__kv{display:grid;grid-template-columns:minmax(9rem,14rem) minmax(0,1fr);gap:var(--s-4);padding:.55rem 0;border-bottom:var(--b-soft)}
+.adm__kv dt{color:var(--c-ivory-500);font-size:.9rem}
+.adm__kv dd{margin:0;overflow-wrap:anywhere}
+.adm__details{width:100%;border-top:var(--b-soft);padding-top:.5rem}
+.adm__details summary{cursor:pointer;color:var(--c-gold-300)}
+.adm__form .adm__h3:first-child,.adm__card .adm__h3:first-child{margin-top:0}
+.af__static{margin:0;padding:.65rem 0;color:var(--c-ivory-100)}
+.af__check--box{display:flex;gap:.6rem;align-items:center}
+.af[hidden]{display:none}
+.ai:disabled{opacity:.6;cursor:not-allowed}
+@media (max-width:640px){.adm__kv{grid-template-columns:1fr;gap:.1rem}.adm__row--spread{align-items:flex-start}}
 .adm__toast{position:fixed;inset-block-end:1.25rem;inset-inline:0;margin-inline:auto;width:max-content;max-width:calc(100% - 2rem);padding:.7rem 1.2rem;border:1px solid var(--c-gold-400);border-radius:var(--r-1);background:var(--c-obsidian-800);opacity:0;pointer-events:none;transform:translateY(.5rem);transition:opacity var(--dur-fast),transform var(--dur-fast)}
 .adm__toast.is-on{opacity:1;transform:none}
 .adm__toast[data-bad="1"]{border-color:var(--c-error);color:var(--c-error)}

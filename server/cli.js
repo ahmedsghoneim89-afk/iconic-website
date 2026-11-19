@@ -25,10 +25,14 @@ const ask = (q, hidden) => new Promise((res) => {
       fs.mkdirSync(path.dirname(dest), { recursive: true }); if (fs.existsSync(dest)) fs.unlinkSync(dest);
       store.db.exec("VACUUM INTO '" + dest.replace(/'/g, "''") + "'");
       console.log('Database copy written to ' + dest + '\nImages live in ' + path.join(cfg.dataDir, 'uploads') + ' — copy that folder too.');
+    } else if (cmd === 'link-units') {
+      const rep = require('./catalog_admin').linkUnits({ apply: args.includes('--apply') });
+      console.log((rep.applied ? 'APPLIED' : 'DRY RUN (nothing written; add --apply to link)') + '\n' + JSON.stringify(rep.totals));
+      for (const k of ['ambiguous', 'missing', 'brokenLinks']) if (rep[k].length) { console.log('\n' + k + ':'); rep[k].forEach((x) => console.log('  ' + x.unit + '  ' + x.title + '  | ' + (x.text || x.projectId) + (x.candidates ? '  -> ' + x.candidates.map((c) => c.name).join(' / ') : ''))); }
     } else if (cmd === 'users') {
       store.db.prepare('SELECT email, created_at FROM users').all().forEach((u) => console.log(u.email, new Date(u.created_at).toISOString()));
     } else {
-      console.log('Usage: node server/cli.js <command>\n  create-admin [email]   create an admin account\n  set-password [email]   change a password (signs that user out everywhere)\n  backup [file]          write a consistent copy of the database\n  users                  list admin accounts');
+      console.log('Usage: node server/cli.js <command>\n  create-admin [email]   create an admin account\n  set-password [email]   change a password (signs that user out everywhere)\n  link-units [--apply]   link existing units to CRM projects by name (dry run without --apply)\n  backup [file]          write a consistent copy of the database\n  users                  list admin accounts');
     }
   } catch (e) { console.error('Error: ' + e.message); process.exitCode = 1; }
 })();

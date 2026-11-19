@@ -36,6 +36,7 @@ ${o.jsonld ? `<script type="application/ld+json">${jsonForScript(o.jsonld)}</scr
 function innerHeader(c, o) {
   const l = c.lang, o2 = other(l), cur = (k) => (o.nav === k ? ' aria-current="true"' : '');
   const lis = [`<li><a class="nav__link" href="/${l}/">${esc(c.t('pg.home'))}</a></li>`, `<li><a class="nav__link" href="/${l}/properties"${cur('props')}>${esc(c.t('nav.properties'))}</a></li>`];
+  if (c.catalog.shownProjects.length) lis.push(`<li><a class="nav__link" href="/${l}/projects"${cur('projects')}>${esc(c.t('nav.projects'))}</a></li>`, `<li><a class="nav__link" href="/${l}/developers"${cur('devs')}>${esc(c.t('nav.developers'))}</a></li>`);
   if (c.layout.teams) lis.push(`<li><a class="nav__link" href="/${l}/#teams">${esc(c.t('nav.teams'))}</a></li>`);
   if (c.layout.about) lis.push(`<li><a class="nav__link" href="/${l}/#about">${esc(c.t('nav.about'))}</a></li>`);
   lis.push(`<li><a class="nav__link" href="/${l}/#contact">${esc(c.t('nav.contact'))}</a></li>`);
@@ -51,6 +52,7 @@ function innerFooter(c, o) {
   return `<footer class="foot foot--pg"><div class="wrap foot__cols">
 <div class="foot__about"><a class="foot__brand" href="/${l}/" aria-label="${esc(cfg.brand)}"><img class="foot__img" src="/logo.svg" alt="${esc(cfg.brand)}" width="106" height="112" loading="lazy"></a><p>${esc(c.t('meta.desc'))}</p></div>
 ${F.activeRegions(c).length ? `<nav aria-label="${esc(c.t('home.regions'))}"><h2 class="foot__h">${esc(c.t('home.regions'))}</h2><ul>${F.activeRegions(c).map((r) => `<li><a href="/${l}/properties/${r.id}">${esc(r[l])}</a></li>`).join('')}</ul></nav>` : ''}
+${c.catalog.shownProjects.length ? `<nav aria-label="${esc(c.t('nav.projects'))}"><h2 class="foot__h">${esc(c.t('nav.projects'))}</h2><ul><li><a href="/${l}/projects">${esc(c.t('pg.proj.title'))}</a></li><li><a href="/${l}/developers">${esc(c.t('pg.dev.title'))}</a></li></ul></nav>` : ''}
 <div class="foot__contact"><h2 class="foot__h">${esc(c.t('nav.contact'))}</h2>${acts ? `<div class="contact-actions">${acts}</div>` : ''}<div class="contact-info">${info}</div></div></div>
 <div class="wrap foot__base"><span class="foot__copy">© ${new Date().getFullYear()} ${esc(c.t('foot.rights'))}</span><a class="foot__link" href="/${l}/careers">${esc(c.t('foot.careers'))}</a></div></footer>`;
 }
@@ -90,7 +92,7 @@ function regionPage(c, id) {
   const desc = seo.description || c.clip(c.t('pg.region.lede', { region }) + ' ' + c.t('meta.desc'), 158);
   const body = `<div class="wrap pg__wrap">${crumbsHtml(c, [[c.t('pg.home'), '/' + l + '/'], [c.t('pg.props.title'), '/' + l + '/properties'], [region]])}
 <header class="pg__head"><h1 class="h2">${esc(c.t('pg.region.title', { region }))}</h1><p class="lede">${esc(c.t('pg.region.lede', { region }))}</p></header>
-${seo.intro ? `<div class="pg__intro">${para(seo.intro)}</div>` : ''}${F.regionLinks(c, id)}
+${seo.intro ? `<div class="pg__intro">${para(seo.intro)}</div>` : ''}${F.regionLinks(c, id)}${require('./catalog_pages').placesBlock(c, id)}
 ${list.length ? `<p class="note" aria-live="polite">${esc(c.t('pg.region.count', { n: c.fmtNum(list.length) }))}</p><div class="grid">${F.cards(c, list)}</div>` : `<div class="empty pg__empty"><p>${esc(c.t('pg.region.empty', { region }))}</p></div>`}
 ${hasTeam && c.layout.teams ? `<div class="teams__list pg__team">${F.teams(c, id)}</div>` : ''}</div>`;
   const jsonld = S.graph([S.orgNode(c), S.siteNode(c), S.crumbs(c, [[c.t('pg.home'), '/' + l + '/'], [c.t('pg.props.title'), S.urls.props(l)], [region, S.urls.region(l, id)]]), list.length ? { '@type': 'ItemList', itemListElement: list.slice(0, 50).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: cfg.siteUrl + p.url, name: p.title })) } : null]);
@@ -99,6 +101,9 @@ ${hasTeam && c.layout.teams ? `<div class="teams__list pg__team">${F.teams(c, id
 function propertyPage(c, p) {
   const l = c.lang, region = c.regionName(p.region), path = (x) => S.urls.prop(x, p.slug), agent = p.agent ? c.agentById.get(p.agent) : null;
   const where = [p.project, p.location, region].filter(Boolean).join(l === 'ar' ? '، ' : ', ');
+  const K = c.catalog, dev = p.developerId ? K.developerById.get(p.developerId) : null, area = p.areaId ? K.areaById.get(p.areaId) : null;
+  const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
+  const whereHtml = p.projectId ? [p.projectUrl ? a(p.projectUrl, p.project) : esc(p.project), area ? a(area.url, area.name) : esc(p.location), region ? a('/' + l + '/properties/' + p.region, region) : ''].filter(Boolean).join(esc(l === 'ar' ? '، ' : ', ')) : esc(where);
   const title = p.seoTitle || `${p.title} — ${region} | ${cfg.brand}`;
   const base = p.description ? c.clip(p.description, 156) : c.clip(`${p.title}. ${c.purposeLabel(p.purpose)}, ${c.typeLabel(p.type)}${region ? ', ' + region : ''}. ${c.priceText(p)}.`, 156);
   const specs = [['prop.type', c.typeLabel(p.type)], ['prop.purpose', c.purposeLabel(p.purpose)], ['prop.beds', p.beds == null ? null : c.fmtNum(p.beds)], ['prop.baths', p.baths == null ? null : c.fmtNum(p.baths)], ['prop.area', p.area]].filter((x) => x[1]);
@@ -108,7 +113,7 @@ function propertyPage(c, p) {
   const body = `<article class="wrap pg__wrap pgp">${crumbsHtml(c, [[c.t('pg.home'), '/' + l + '/'], [c.t('pg.props.title'), '/' + l + '/properties'], [region, '/' + l + '/properties/' + p.region], [p.title]])}
 <div class="pgp__grid"><div class="pgp__media">${gallery}</div>
 <div class="pgp__body"><p class="pgp__tags"><span>${esc(c.purposeLabel(p.purpose))}</span><span>${esc(c.typeLabel(p.type))}</span></p>
-<h1 class="pgp__title">${esc(p.title)}</h1>${where ? `<p class="pgp__loc">${esc(where)}</p>` : ''}<p class="detail__price">${esc(c.priceText(p))}</p>
+<h1 class="pgp__title">${esc(p.title)}</h1>${where ? `<p class="pgp__loc">${whereHtml}</p>` : ''}${dev ? `<p class="pgp__loc">${esc(c.t('prop.developer'))}: ${a(dev.url, dev.name)}</p>` : ''}<p class="detail__price">${esc(c.priceText(p))}</p>
 ${specs.length ? `<dl class="specs">${specs.map(([k, v]) => `<div><dt>${esc(c.t(k))}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
 ${p.description ? `<section class="pgp__about"><h2>${esc(c.t('pg.prop.about'))}</h2>${para(p.description)}</section>` : ''}
 ${agent ? `<div class="agentline"><p class="note">${esc(c.t('detail.agent'))}</p><div class="agentline__row"><div class="agentline__photo agent__photo${agent.photo ? '' : ' is-ph'}">${F.agentPhoto(c, agent)}</div><div class="agentline__who"><strong>${esc(agent.name)}</strong><span>${esc(agent.role)}</span></div><div class="agent__actions">${F.agentActions(c, agent, p)}</div></div></div>` : ''}
@@ -163,4 +168,4 @@ function loginPage(c) {
 <button class="btn btn--primary" type="submit">${esc(X.go)}</button><p class="status" id="loginStatus" role="alert" aria-live="polite"></p></form></div>`;
   return page(c, { path, title: `${X.t} | ${cfg.brand}`, description: X.t, noindex: true, nav: '' }, body).replace('<meta name="robots"', '<meta name="robots"');
 }
-module.exports = { careersPage, jobPage, propertiesPage, regionPage, propertyPage, notFoundPage, loginPage, head, page, indexable, para };
+module.exports = { crumbsHtml, careersPage, jobPage, propertiesPage, regionPage, propertyPage, notFoundPage, loginPage, head, page, indexable, para };

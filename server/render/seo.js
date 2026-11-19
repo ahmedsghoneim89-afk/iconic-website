@@ -6,7 +6,7 @@ const F = require('./frag');
 const root = (lang) => cfg.siteUrl + '/' + lang + '/';
 const urls = {
   careers: (l) => '/' + l + '/careers', job: (l, slug) => '/' + l + '/careers/' + slug,
-  home: (l) => '/' + l + '/', props: (l) => '/' + l + '/properties', region: (l, id) => '/' + l + '/properties/' + id, prop: (l, slug) => '/' + l + '/property/' + slug
+  home: (l) => '/' + l + '/', developers: (l) => '/' + l + '/developers', developer: (l, slug) => '/' + l + '/developers/' + slug, projects: (l) => '/' + l + '/projects', project: (l, slug) => '/' + l + '/projects/' + slug, area: (l, slug) => '/' + l + '/areas/' + slug, props: (l) => '/' + l + '/properties', region: (l, id) => '/' + l + '/properties/' + id, prop: (l, slug) => '/' + l + '/property/' + slug
 };
 const orgId = () => cfg.siteUrl + '/#organization';
 
@@ -64,6 +64,12 @@ function entries(c0, ctxFor) {
     const lm = Math.max(...cs.en.jobs.map((j) => j.updatedAt));
     out.push({ alt: alt(urls.careers), lastmod: lm }); cs.en.jobs.forEach((j) => out.push({ alt: alt((l) => urls.job(l, j.slug)), lastmod: j.updatedAt }));
   }
+  { const CP = require('./catalog_pages'), K = cs.en.catalog, E = cs.en;
+    if (K.shownProjects.length) out.push({ alt: alt(urls.projects), lastmod: Math.max(...K.shownProjects.map((x) => x.updatedAt || 0)) || top });
+    K.shownProjects.filter((x) => CP.projectHasContent(E, x)).forEach((x) => out.push({ alt: alt((l) => urls.project(l, x.slug)), lastmod: x.updatedAt || top, images: x.images.map(E.abs) }));
+    const devs = K.developers.filter((x) => CP.developerHasContent(E, x));
+    if (devs.length) { out.push({ alt: alt(urls.developers), lastmod: Math.max(...devs.map((x) => x.updatedAt || 0)) || top }); devs.forEach((x) => out.push({ alt: alt((l) => urls.developer(l, x.slug)), lastmod: x.updatedAt || top })); }
+    K.areas.filter((x) => CP.areaHasContent(E, x) || x.description).forEach((x) => out.push({ alt: alt((l) => urls.area(l, x.slug)), lastmod: x.updatedAt || top })); }
   cs.en.props.forEach((p) => out.push({ alt: alt((l) => urls.prop(l, p.slug)), lastmod: p.updatedAt, images: p.images.map(cs.en.abs), title: p.title }));
   return out;
 }
