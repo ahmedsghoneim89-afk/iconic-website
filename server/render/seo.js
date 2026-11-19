@@ -59,7 +59,7 @@ function sitemap(ctxFor) {
 }
 function robots() {
   const open = cfg.siteUrl.startsWith('https://') || process.env.ALLOW_INDEXING === '1';
-  return (open ? 'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n' : 'User-agent: *\nDisallow: /\n') + '\nSitemap: ' + cfg.siteUrl + '/sitemap.xml\n';
+  return (open ? 'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /iconic-api/\nDisallow: /admin\n' : 'User-agent: *\nDisallow: /\n') + '\nSitemap: ' + cfg.siteUrl + '/sitemap.xml\n';
 }
 const manifest = (lang) => ({ name: cfg.brand, short_name: 'ICONIC', start_url: '/' + lang + '/', scope: '/', display: 'standalone', background_color: '#050507', theme_color: '#050507', lang, dir: lang === 'ar' ? 'rtl' : 'ltr', icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] });
 

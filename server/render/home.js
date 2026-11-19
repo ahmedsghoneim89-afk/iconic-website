@@ -45,7 +45,7 @@ ${P.head(c, { path, title: c.t('meta.title'), description: c.t('meta.desc'), jso
 <body>
 ${b}
 <script defer src="${gsap}"></script><script defer src="${st}"></script><script defer src="${three}"></script>
-<script defer src="/assets/${T.assets.js}"></script>
+<script defer src="/iconic-assets/${T.assets.js}"></script>
 </body>
 </html>`;
   return { html, inline };

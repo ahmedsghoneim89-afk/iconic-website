@@ -29,7 +29,7 @@ ${cfg.googleVerification ? `<meta name="google-site-verification" content="${esc
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest?lang=${lang}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@300;400;500;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500&family=Jost:wght@300;400;500&display=swap">
-<link rel="stylesheet" href="/assets/${T.assets.css}">${T.assets.pageCss ? `<link rel="stylesheet" href="/assets/${T.assets.pageCss}">` : ''}
+<link rel="stylesheet" href="/iconic-assets/${T.assets.css}">${T.assets.pageCss ? `<link rel="stylesheet" href="/iconic-assets/${T.assets.pageCss}">` : ''}
 ${o.jsonld ? `<script type="application/ld+json">${jsonForScript(o.jsonld)}</script>` : ''}`;
 }
 
@@ -66,7 +66,7 @@ ${head(c, o)}
 ${innerHeader(c, o)}
 <main id="main" class="pg" tabindex="-1">${mainHtml}</main>
 ${innerFooter(c, o)}
-<script defer src="/assets/${T.assets.page}"></script>
+<script defer src="/iconic-assets/${T.assets.page}"></script>
 </body>
 </html>`;
 }

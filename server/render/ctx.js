@@ -1,6 +1,6 @@
 'use strict';
 /* One request's view of the content: translated text, formatted values and tidy copies of every record, in one language. */
-const I = require('../data/i18n.json');
+const I = require('../i18n.json');
 const cfg = require('../config');
 
 const REGIONS = I.regions, TYPES = I.types, PURPOSES = I.purposes;
