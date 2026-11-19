@@ -293,14 +293,14 @@ function observeReveal(els) {
 }
 function drawTeams() {
   const set = teamSet(), list = $('#teamsList'); list.textContent = ''; if (!set) return;
-  const teams = set.teams.slice().sort((x, y) => regionRank(x.region) - regionRank(y.region)).filter((tm) => !App.teamRegion || tm.region === App.teamRegion);
+  const teams = set.teams.slice().sort((x, y) => regionRank(x.region) - regionRank(y.region)).filter((tm) => !App.teamRegion || teamRegions(tm).includes(App.teamRegion));
   teams.forEach((tm) => {
     const agents = set.agents.filter((a) => a.team === tm.id), units = agents.reduce((n, a) => n + unitsOfAgent(a).length, 0);
-    const sec = doc.createElement('section'); sec.className = 'team'; sec.dataset.region = tm.region; sec.id = 'team-' + tm.region; sec.setAttribute('aria-labelledby', 'team-' + tm.id + '-t');
+    const sec = doc.createElement('section'); sec.className = 'team'; sec.dataset.region = teamRegions(tm).join(' '); sec.id = 'team-' + tm.id; sec.setAttribute('aria-labelledby', 'team-' + tm.id + '-t');
     const head = doc.createElement('header'); head.className = 'team__head';
     const h = doc.createElement('h3'); h.id = 'team-' + tm.id + '-t'; h.textContent = L(tm.name);
     const meta = doc.createElement('p'); meta.className = 'team__meta';
-    [regionName(tm.region), plural('team.agents', agents.length), plural('team.units', units)].filter(Boolean).forEach((x) => { const sp = doc.createElement('span'); sp.textContent = x; meta.appendChild(sp); });
+    [regionsLabel(teamRegions(tm)), plural('team.agents', agents.length), plural('team.units', units)].filter(Boolean).forEach((x) => { const sp = doc.createElement('span'); sp.textContent = x; meta.appendChild(sp); });
     head.append(h, meta);
     const grid = doc.createElement('div'); grid.className = 'team__agents';
     agents.forEach((a, i) => grid.appendChild(agentCard(a, set.sample, i)));
@@ -314,7 +314,7 @@ function renderTeams() {
   const pb = $('#teamsPreviewBtn'); pb.setAttribute('aria-pressed', String(App.teamsPreview)); pb.textContent = t(App.teamsPreview ? 'teams.preview.off' : 'teams.preview');
   $('#teamsEmpty').hidden = hasReal; $('#teamsNote').hidden = hasReal || !App.teamsPreview;
   if (!set) { filters.hidden = true; $('#teamsList').textContent = ''; return; }
-  const regions = REGIONS.filter((r) => set.teams.some((tm) => tm.region === r.id));
+  const regions = REGIONS.filter((r) => set.teams.some((tm) => teamRegions(tm).includes(r.id)));
   if (App.teamRegion && !regions.some((r) => r.id === App.teamRegion)) App.teamRegion = null;
   filters.hidden = regions.length < 2;
   if (regions.length > 1) {

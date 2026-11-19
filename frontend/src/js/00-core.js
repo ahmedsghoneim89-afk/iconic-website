@@ -41,6 +41,9 @@ const REGIONS = [
   { id: 'red-sea', en: 'Red Sea', ar: 'البحر الأحمر' }
 ];
 const regionName = (id) => { const r = REGIONS.find((x) => x.id === id); return r ? r[App.lang] : ''; };
+/* a team serves one or more regions; older documents only carry `region` */
+const teamRegions = (tm) => (Array.isArray(tm.regions) && tm.regions.length ? tm.regions : (tm.region ? [tm.region] : [])).filter((id) => REGIONS.some((r) => r.id === id));
+const regionsLabel = (ids) => ids.map(regionName).filter(Boolean).join(App.lang === 'ar' ? '، ' : ', ');
 /* Property type and purpose are stored as stable keys and shown in the visitor's language. */
 const TYPES = [['residential', { en: 'Residential', ar: 'سكني' }], ['commercial', { en: 'Commercial', ar: 'تجاري' }], ['administrative', { en: 'Administrative', ar: 'إداري' }], ['medical', { en: 'Medical', ar: 'طبي' }], ['land', { en: 'Land', ar: 'أرض' }]];
 const PURPOSES = [['sale', { en: 'For sale', ar: 'للبيع' }], ['rent', { en: 'For rent', ar: 'للإيجار' }]];
@@ -57,7 +60,7 @@ const DATA = {
   layout: { teams: true, about: true },
   /* Property schema: { id, title, type, purpose, region:<region id>, location, project, agent:<agent id>, price, currency, beds, baths, area, description, images:[url], model3d:null } */
   properties: [],
-  /* Sales teams: one per region. Team schema: { id, region:<region id>, name:{en,ar} }
+  /* Sales teams: each serves one or more regions. Team schema: { id, regions:[<region id>…], name:{en,ar} } (older docs: region:<region id>)
      Agent schema: { id, team:<team id>, name:{en,ar}|'text', role:{en,ar}|'text', photo:'https://…', phone:'+20…', whatsapp:'20…' (digits, country code), email }
      An agent's units are the properties whose `agent` equals the agent's id. */
   teams: [],
@@ -76,7 +79,7 @@ const SAMPLE = [
   { id: 'sample-e', title: 'Sample listing E', type: 'residential', purpose: 'sale', region: 'cairo', agent: 'sample-agent-6', location: 'Sample location', price: null, beds: 2, baths: 2, area: '120 m²', description: 'Layout preview only. This is not a real listing.' },
   { id: 'sample-f', title: 'Sample listing F', type: 'residential', purpose: 'sale', region: 'red-sea', agent: 'sample-agent-7', location: 'Sample location', price: null, beds: 1, baths: 1, area: '75 m²', description: 'Layout preview only. This is not a real listing.' }
 ];
-const SAMPLE_TEAMS = REGIONS.map((r) => ({ id: 'sample-team-' + r.id, region: r.id, name: { en: r.en + ' team', ar: 'فريق ' + r.ar } }));
+const SAMPLE_TEAMS = REGIONS.map((r) => ({ id: 'sample-team-' + r.id, region: r.id, regions: [r.id], name: { en: r.en + ' team', ar: 'فريق ' + r.ar } }));
 const AR_DIGITS = ['١', '٢', '٣', '٤', '٥', '٦', '٧', '٨'];
 const SAMPLE_AGENTS = REGIONS.flatMap((r, ri) => [0, 1].map((k) => {
   const n = ri * 2 + k + 1;

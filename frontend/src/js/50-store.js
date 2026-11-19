@@ -10,7 +10,7 @@ const orderOf = (r) => { const n = numOrNull(r.order); return n == null ? 100 : 
 function branchFromDoc(r) {
   return { id: r.id, get name() { return L(r.name); }, get city() { return L(r.city); }, get address() { return L(r.address); }, get hours() { return L(r.hours); }, phone: r.phone || '', whatsapp: r.whatsapp || '', map: httpsUrl(r.map || '') };
 }
-function teamFromDoc(r) { return { id: r.id, region: r.region, name: r.name || '' }; }
+function teamFromDoc(r) { const regions = teamRegions(r); return { id: r.id, region: regions[0] || '', regions, name: r.name || '' }; }
 function agentFromDoc(r) { return { id: r.id, team: r.team, name: r.name || '', role: r.role || '', photo: refUrl(r.photo), phone: r.phone || '', whatsapp: r.whatsapp || '', email: r.email || '' }; }
 function propFromDoc(r) {
   return {

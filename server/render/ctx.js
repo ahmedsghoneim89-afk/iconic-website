@@ -33,8 +33,11 @@ function make(lang, snap) {
 
   const agents = raw.agents.map((a) => ({ id: a.id, team: a.team, name: L(a.name), role: L(a.role), photo: imgPath(a.photo), phone: a.phone || '', whatsapp: a.whatsapp || '', email: a.email || '' }));
   const agentById = new Map(agents.map((a) => [a.id, a]));
-  const teams = raw.teams.map((x) => ({ id: x.id, region: x.region, name: L(x.name) }));
   const regionRank = (id) => { const i = REGIONS.findIndex((r) => r.id === id); return i < 0 ? 99 : i; };
+  /* a team serves one or more regions; documents saved before that only carry `region` */
+  const teamRegions = (x) => (Array.isArray(x.regions) && x.regions.length ? x.regions : (x.region ? [x.region] : [])).filter((r) => REGIONS.some((g) => g.id === r)).sort((a, b) => regionRank(a) - regionRank(b));
+  const regionsLabel = (ids) => ids.map(regionName).filter(Boolean).join(lang === 'ar' ? '، ' : ', ');
+  const teams = raw.teams.map((x) => { const regions = teamRegions(x); return { id: x.id, regions, region: regions[0] || '', name: L(x.name) }; });
   const props = raw.properties.map((p) => {
     const area = p.area != null && p.area !== '' ? Number(p.area) : null;
     return {
@@ -52,7 +55,7 @@ function make(lang, snap) {
     id: j.id, slug: j.slug, url: '/' + lang + '/careers/' + j.slug, title: L(j.title), department: L(j.department), location: L(j.location), type: j.type || 'full', typeLabel: jobTypeLabel(j.type || 'full'),
     description: L(j.description), requirements: L(j.requirements), posted: j.posted || '', closes: j.closes || '', updatedAt: j._u || 0
   })).filter((j) => j.title);
-  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, branches, jobs, today, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
+  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, regionsLabel, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, branches, jobs, today, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
 }
 
 const waNumber = (v) => { let n = String(v || '').replace(/\D/g, ''); if (/^01\d{9}$/.test(n)) n = '20' + n.slice(1); return n; };

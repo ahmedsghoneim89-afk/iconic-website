@@ -18,8 +18,8 @@ const AD = {
     'f.add': 'Add', 'f.edit': 'Edit', 'f.delete': 'Delete', 'f.confirm': 'Delete', 'f.keep': 'Keep', 'f.req': 'Required', 'f.reqAny': 'Enter the name in at least one language',
     'f.en': 'English', 'f.ar': 'Arabic', 'f.order': 'Display order', 'f.orderHint': 'Lower numbers come first.', 'f.none': 'None', 'f.choose': 'Choose…',
     'f.badWa': 'Enter a valid number with country code, for example 201001234567, or 01001234567.', 'f.badPhone': 'Enter a valid phone number.', 'f.badEmail': 'Enter a valid email address.', 'f.badUrl': 'The link must start with https://',
-    'tm.title': 'Sales teams', 'tm.lead': 'One team per region. Agents belong to a team.', 'tm.add': 'Add a team', 'tm.edit': 'Edit team', 'tm.new': 'New team',
-    'tm.region': 'Region', 'tm.name': 'Team name', 'tm.empty': 'No teams yet. Create the four regional teams from Overview, or add one here.', 'tm.hasAgents': 'This team still has agents. Move or delete them first.',
+    'tm.title': 'Sales teams', 'tm.lead': 'A team can serve one or more regions. Agents belong to a team.', 'tm.add': 'Add a team', 'tm.edit': 'Edit team', 'tm.new': 'New team',
+    'tm.regions': 'Regions served', 'tm.regionsHint': 'Tick every region this team covers.', 'tm.reqRegion': 'Tick at least one region', 'tm.name': 'Team name', 'tm.empty': 'No teams yet. Create the four regional teams from Overview, or add one here.', 'tm.hasAgents': 'This team still has agents. Move or delete them first.',
     'tm.del': 'Delete the team “{name}”?',
     'ag.title': 'Agents', 'ag.lead': 'Photo, contact details and the units each agent handles.', 'ag.add': 'Add an agent', 'ag.edit': 'Edit agent', 'ag.new': 'New agent',
     'ag.team': 'Team', 'ag.name': 'Name', 'ag.role': 'Role', 'ag.photo': 'Photo', 'ag.wa': 'WhatsApp number', 'ag.waHint': 'With country code, digits only, for example 201001234567. A local number such as 01001234567 also works.',
@@ -50,8 +50,8 @@ const AD = {
     'f.add': 'إضافة', 'f.edit': 'تعديل', 'f.delete': 'حذف', 'f.confirm': 'حذف', 'f.keep': 'إبقاء', 'f.req': 'مطلوب', 'f.reqAny': 'أدخل الاسم بلغة واحدة على الأقل',
     'f.en': 'الإنجليزية', 'f.ar': 'العربية', 'f.order': 'ترتيب العرض', 'f.orderHint': 'الأرقام الأصغر تظهر أولًا.', 'f.none': 'بدون', 'f.choose': 'اختر…',
     'f.badWa': 'أدخل رقمًا صحيحًا بكود الدولة، مثل 201001234567، أو 01001234567.', 'f.badPhone': 'أدخل رقم هاتف صحيحًا.', 'f.badEmail': 'أدخل بريدًا إلكترونيًا صحيحًا.', 'f.badUrl': 'يجب أن يبدأ الرابط بـ https://',
-    'tm.title': 'فرق المبيعات', 'tm.lead': 'فريق لكل منطقة. كل وكيل ينتمي إلى فريق.', 'tm.add': 'إضافة فريق', 'tm.edit': 'تعديل الفريق', 'tm.new': 'فريق جديد',
-    'tm.region': 'المنطقة', 'tm.name': 'اسم الفريق', 'tm.empty': 'لا توجد فرق بعد. أنشئ فرق المناطق الأربع من النظرة العامة، أو أضف فريقًا من هنا.', 'tm.hasAgents': 'ما زال في هذا الفريق وكلاء. انقلهم أو احذفهم أولًا.',
+    'tm.title': 'فرق المبيعات', 'tm.lead': 'يمكن للفريق خدمة منطقة أو أكثر. كل وكيل ينتمي إلى فريق.', 'tm.add': 'إضافة فريق', 'tm.edit': 'تعديل الفريق', 'tm.new': 'فريق جديد',
+    'tm.regions': 'المناطق التي يخدمها الفريق', 'tm.regionsHint': 'اختر كل منطقة يغطيها هذا الفريق.', 'tm.reqRegion': 'اختر منطقة واحدة على الأقل', 'tm.name': 'اسم الفريق', 'tm.empty': 'لا توجد فرق بعد. أنشئ فرق المناطق الأربع من النظرة العامة، أو أضف فريقًا من هنا.', 'tm.hasAgents': 'ما زال في هذا الفريق وكلاء. انقلهم أو احذفهم أولًا.',
     'tm.del': 'حذف فريق «{name}»؟',
     'ag.title': 'الوكلاء', 'ag.lead': 'الصورة وبيانات التواصل والوحدات التي يتولاها كل وكيل.', 'ag.add': 'إضافة وكيل', 'ag.edit': 'تعديل الوكيل', 'ag.new': 'وكيل جديد',
     'ag.team': 'الفريق', 'ag.name': 'الاسم', 'ag.role': 'المسمى الوظيفي', 'ag.photo': 'الصورة', 'ag.wa': 'رقم واتساب', 'ag.waHint': 'بكود الدولة وأرقام فقط، مثل 201001234567. ويصلح الرقم المحلي مثل 01001234567.',
@@ -112,6 +112,11 @@ function input(name, value, o = {}) { return h('input', { class: 'ai', name, typ
 function select(name, options, value, o = {}) {
   const s = h('select', { class: 'ai', name }, o.blank ? h('option', { value: '', text: o.blank }) : null, options.map(([v, l]) => h('option', { value: v, text: l })));
   s.value = value == null ? '' : value; return s;
+}
+/* a group of tick boxes (several values at once); read back with input[name][value].checked */
+function regionChecks(name, values) {
+  return h('div', { class: 'af__checks', role: 'group', 'aria-label': ta('tm.regions') }, REGIONS.map((r) =>
+    h('label', { class: 'af__check af__check--box' }, h('input', { type: 'checkbox', name, value: r.id, checked: values.includes(r.id) }), h('span', { text: r[App.lang] }))));
 }
 function bil(name, label, value, area, errKey, ph) {
   const v = value && typeof value === 'object' ? value : { en: value || '', ar: '' }, mk = (lang) => h(area ? 'textarea' : 'input', { class: 'ai' + (area ? ' ai--area' : ''), name: name + '_' + lang, value: v[lang] || '', placeholder: ph ? ph[lang] : null, dir: lang === 'ar' ? 'rtl' : 'ltr', lang, rows: area ? 4 : null, autocomplete: 'off', 'aria-label': label + ' — ' + ta('f.' + lang) });
@@ -208,7 +213,7 @@ function viewOverview() {
   if (!c.whatsapp && !c.phone && !c.email) todo.push([ta('ov.noCompany'), 'company']);
   const seed = !R.teams.length ? h('div', { class: 'adm__card' }, h('p', { text: ta('ov.seedHint') }), h('button', { type: 'button', class: 'btn btn--small btn--primary', onclick: async (e) => {
     e.target.disabled = true;
-    try { for (let i = 0; i < REGIONS.length; i++) { const r = REGIONS[i]; await dbSet('teams', 't-' + r.id, { region: r.id, name: { en: r.en + ' team', ar: 'فريق ' + r.ar }, order: (i + 1) * 10 }); } toast(ta('f.saved')); } catch (err) { console.warn(err); toast(ta('f.failed'), true); e.target.disabled = false; }
+    try { for (let i = 0; i < REGIONS.length; i++) { const r = REGIONS[i]; await dbSet('teams', 't-' + r.id, { regions: [r.id], region: r.id, name: { en: r.en + ' team', ar: 'فريق ' + r.ar }, order: (i + 1) * 10 }); } toast(ta('f.saved')); } catch (err) { console.warn(err); toast(ta('f.failed'), true); e.target.disabled = false; }
   }, text: ta('ov.seed') })) : null;
   return h('div', null, sectionHead(ta('nav.overview'), ta('ov.lead')),
     h('div', { class: 'adm__stats' }, stat(R.teams.length, ta('ov.teams'), 'teams'), stat(R.agents.length, ta('ov.agents'), 'agents'), stat(R.properties.length, ta('ov.units'), 'units')),
@@ -258,7 +263,7 @@ function viewTeams() {
   const R = Store.raw, order = (a, b) => orderOf(a) - orderOf(b);
   const rows = R.teams.slice().sort(order).map((tm) => {
     const ag = agentsOfTeam(tm.id), units = ag.reduce((n, a) => n + unitsOfAgentId(a.id).length, 0);
-    return h('li', { class: 'adm__li' }, h('div', { class: 'adm__li-main' }, h('strong', { text: nameOf(tm.name) }), h('span', { class: 'note', text: [regionName(tm.region), plural('team.agents', ag.length), plural('team.units', units)].filter(Boolean).join(' | ') })),
+    return h('li', { class: 'adm__li' }, h('div', { class: 'adm__li-main' }, h('strong', { text: nameOf(tm.name) }), h('span', { class: 'note', text: [regionsLabel(teamRegions(tm)), plural('team.agents', ag.length), plural('team.units', units)].filter(Boolean).join(' | ') })),
       h('button', { type: 'button', class: 'btn btn--small', onclick: () => { AS.form = { kind: 'team', id: tm.id }; drawAdmin(); }, text: ta('f.edit') }));
   });
   return h('div', null, sectionHead(ta('tm.title'), ta('tm.lead'), addBtn(ta('tm.add'), () => { AS.form = { kind: 'team', id: null }; drawAdmin(); })), layoutSwitch('teams', ta('lay.teams')), rows.length ? h('ul', { class: 'adm__list' }, rows) : h('p', { class: 'adm__empty', text: ta('tm.empty') }));
@@ -271,13 +276,13 @@ function teamForm(id) {
     try { await dbDel('teams', id); toast(ta('f.saved')); AS.form = null; drawAdmin(); } catch (e) { console.warn(e); toast(ta('f.failed'), true); }
   } : null;
   const f = formShell('', [
-    fieldWrap(ta('tm.region'), select('region', regionOptions(), r ? r.region : '', { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'region' })),
+    fieldWrap(ta('tm.regions'), regionChecks('regions', r ? teamRegions(r) : []), ta('tm.regionsHint'), h('p', { class: 'af__e', 'data-err': 'regions' })),
     bil('name', ta('tm.name'), r && r.name, false), orderField(r && r.order)
   ], {
     collect: (f) => {
-      const region = f.elements.region.value, name = readBil(f, 'name'); let bad = false;
-      bad = setErr(f, 'region', region ? '' : ta('f.req')) || bad; bad = setErr(f, 'name', hasAny(name) ? '' : ta('f.reqAny')) || bad;
-      return bad ? null : { region, name, order: numOrNull(f.elements.order.value) };
+      const regions = REGIONS.filter((x) => f.querySelector('input[name="regions"][value="' + x.id + '"]').checked).map((x) => x.id), name = readBil(f, 'name'); let bad = false;
+      bad = setErr(f, 'regions', regions.length ? '' : ta('tm.reqRegion')) || bad; bad = setErr(f, 'name', hasAny(name) ? '' : ta('f.reqAny')) || bad;
+      return bad ? null : { regions, region: regions[0], name, order: numOrNull(f.elements.order.value) };
     },
     write: async (d) => { await dbSet('teams', id || newId('t'), d); AS.form = null; drawAdmin(); }
   }, () => { AS.form = null; drawAdmin(); }, del);
@@ -309,7 +314,7 @@ function agentForm(id) {
     try { for (const p of unitsOfAgentId(id)) await dbSet('properties', p.id, Object.assign({}, stripId(p), { agent: '' })); await dbDel('agents', id); toast(ta('f.saved')); AS.form = null; drawAdmin(); } catch (e) { console.warn(e); toast(ta('f.failed'), true); }
   } : null;
   const f = formShell('', [
-    fieldWrap(ta('ag.team'), select('team', Store.raw.teams.map((tm) => [tm.id, nameOf(tm.name) + ' — ' + regionName(tm.region)]), r ? r.team : (AS.filters.team || ''), { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'team' })),
+    fieldWrap(ta('ag.team'), select('team', Store.raw.teams.map((tm) => [tm.id, nameOf(tm.name) + ' — ' + regionsLabel(teamRegions(tm))]), r ? r.team : (AS.filters.team || ''), { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'team' })),
     bil('name', ta('ag.name'), r && r.name, false), bil('role', ta('ag.role'), r && r.role, false), photoField(ph, ta('ag.photo')),
     fieldWrap(ta('ag.wa'), input('whatsapp', r && r.whatsapp, { type: 'tel', dir: 'ltr', im: 'tel' }), ta('ag.waHint'), h('p', { class: 'af__e', 'data-err': 'whatsapp' })),
     fieldWrap(ta('ag.phone'), input('phone', r && r.phone, { type: 'tel', dir: 'ltr', im: 'tel' }), null, h('p', { class: 'af__e', 'data-err': 'phone' })),
@@ -354,7 +359,7 @@ function unitForm(id) {
     if (!(await ask(ta('un.del', { name: nameOf(r.title) })))) return;
     try { await dbDel('properties', id); toast(ta('f.saved')); AS.form = null; drawAdmin(); } catch (e) { console.warn(e); toast(ta('f.failed'), true); }
   } : null;
-  const agentOpts = Store.raw.agents.map((a) => { const tm = rawOf('teams', a.team); return [a.id, nameOf(a.name) + (tm ? ' — ' + regionName(tm.region) : '')]; });
+  const agentOpts = Store.raw.agents.map((a) => { const tm = rawOf('teams', a.team); return [a.id, nameOf(a.name) + (tm ? ' — ' + regionsLabel(teamRegions(tm)) : '')]; });
   const num = (name, label, v, step) => fieldWrap(label, input(name, v == null ? '' : v, { type: 'number', min: '0', step: step || '1', im: 'decimal' }));
   const f = formShell('', [
     bil('title', ta('un.name'), r && r.title, false), bil('project', ta('un.project'), r && r.project, false),

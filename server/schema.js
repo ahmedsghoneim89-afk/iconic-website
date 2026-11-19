@@ -73,7 +73,14 @@ const COLLECTIONS = {
     const o = obj({ title: bi(140), department: bi(100), location: bi(160), type: oneOf(JOB_TYPE_IDS, true), description: bi(6000), requirements: bi(4000), active: bool, closes: isoDate, order: num(-9999, 9999) })(v);
     if (!hasText(o.title)) fail('title required'); if (!o.type) o.type = 'full'; if (o.active === undefined) o.active = true; return o;
   },
-  teams: (v) => { const o = obj({ region: oneOf(REGION_IDS), name: bi(120), order: num(-9999, 9999) })(v); if (!o.region) fail('region required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
+  teams: (v) => {
+    /* a team can serve several regions: `regions` is the list; `region` (first of them) is kept for older readers */
+    const o = obj({ regions: arr(oneOf(REGION_IDS), REGION_IDS.length), region: oneOf(REGION_IDS, true), name: bi(120), order: num(-9999, 9999) })(v);
+    const set = new Set(o.regions || []); if (!set.size && o.region) set.add(o.region);
+    if (!set.size) fail('region required');
+    o.regions = REGION_IDS.filter((r) => set.has(r)); o.region = o.regions[0];
+    if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o;
+  },
   agents: (v) => { const o = obj({ team: S(80), name: bi(120), role: bi(120), photo: img, whatsapp: S(30), phone: S(30), email, order: num(-9999, 9999) })(v); if (!o.team) fail('team required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
   properties: (v) => {
     const o = obj({ title: bi(160), project: bi(160), location: bi(200), description: bi(4000), seoTitle: bi(120), seoDescription: bi(320), region: oneOf(REGION_IDS), type: oneOf(TYPE_IDS), purpose: oneOf(PURPOSE_IDS), agent: S(80), price: num(0, 1e12), currency: oneOf(CURRENCIES, true), beds: num(0, 99), baths: num(0, 99), area: num(0, 1e6), images: arr(img, 30), order: num(-9999, 9999) })(v);

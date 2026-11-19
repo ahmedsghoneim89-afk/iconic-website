@@ -34,10 +34,10 @@ function agentCard(c, a, i) {
 }
 function teams(c, only) {
   if (!c.layout.teams && !only) return '';
-  return c.teams.slice().sort((x, y) => c.regionRank(x.region) - c.regionRank(y.region)).filter((tm) => !only || tm.region === only).map((tm) => {
+  return c.teams.slice().sort((x, y) => c.regionRank(x.region) - c.regionRank(y.region)).filter((tm) => !only || tm.regions.includes(only)).map((tm) => {
     const ag = c.agents.filter((a) => a.team === tm.id), units = ag.reduce((n, a) => n + c.props.filter((p) => p.agent === a.id).length, 0);
-    const meta = [c.regionName(tm.region), c.plural('team.agents', ag.length), c.plural('team.units', units)].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('');
-    return `<section class="team" data-region="${esc(tm.region)}" id="team-${esc(tm.region)}" aria-labelledby="team-${esc(tm.id)}-t"><header class="team__head"><h3 id="team-${esc(tm.id)}-t">${esc(tm.name)}</h3><p class="team__meta">${meta}</p></header><div class="team__agents">${ag.map((a, i) => agentCard(c, a, i)).join('')}</div></section>`;
+    const meta = [c.regionsLabel(tm.regions), c.plural('team.agents', ag.length), c.plural('team.units', units)].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('');
+    return `<section class="team" data-region="${esc(tm.regions.join(' '))}" id="team-${esc(tm.id)}" aria-labelledby="team-${esc(tm.id)}-t"><header class="team__head"><h3 id="team-${esc(tm.id)}-t">${esc(tm.name)}</h3><p class="team__meta">${meta}</p></header><div class="team__agents">${ag.map((a, i) => agentCard(c, a, i)).join('')}</div></section>`;
   }).join('');
 }
 function pillars(c) {
@@ -72,7 +72,7 @@ function contactInfo(c) {
   return rows.join('');
 }
 /* regions that actually have something to show, as plain links: they connect the pages for visitors and for search engines */
-function activeRegions(c) { return c.REGIONS.filter((r) => c.props.some((p) => p.region === r.id) || c.teams.some((tm) => tm.region === r.id)); }
+function activeRegions(c) { return c.REGIONS.filter((r) => c.props.some((p) => p.region === r.id) || c.teams.some((tm) => tm.regions.includes(r.id))); }
 function regionLinks(c, current) {
   const rs = activeRegions(c); if (!rs.length) return '';
   const li = (href, text, on) => `<li><a class="chip" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(text)}</a></li>`;

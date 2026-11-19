@@ -84,7 +84,7 @@ ${c.props.length ? `<p class="note" aria-live="polite">${esc(c.t('props.count', 
   return page(c, { path, title, description: c.clip(c.t('pg.props.lede') + ' ' + c.t('meta.desc'), 158), jsonld, nav: 'props', noindex: !c.props.length }, body);
 }
 function regionPage(c, id) {
-  const l = c.lang, region = c.regionName(id), seo = c.regionSeo(id), list = c.props.filter((p) => p.region === id), hasTeam = c.teams.some((tm) => tm.region === id);
+  const l = c.lang, region = c.regionName(id), seo = c.regionSeo(id), list = c.props.filter((p) => p.region === id), hasTeam = c.teams.some((tm) => tm.regions.includes(id));
   const path = (x) => S.urls.region(x, id);
   const title = seo.title || `${c.t('pg.region.title', { region })} | ${cfg.brand}`;
   const desc = seo.description || c.clip(c.t('pg.region.lede', { region }) + ' ' + c.t('meta.desc'), 158);
