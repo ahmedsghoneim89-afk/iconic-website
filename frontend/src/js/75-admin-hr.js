@@ -48,8 +48,8 @@ Object.assign(AD.ar, {
 
 /* ----- who sees what ----- */
 const ROLE_SECTIONS = {
-  admin: ['overview', 'leads', 'applications', 'texts', 'skyline', 'about', 'company', 'branches', 'teams', 'agents', 'units', 'jobs', 'seo', 'users', 'backup', 'account'],
-  editor: ['overview', 'leads', 'texts', 'skyline', 'about', 'company', 'branches', 'teams', 'agents', 'units', 'seo', 'backup', 'account'],
+  admin: ['overview', 'leads', 'sell', 'applications', 'texts', 'skyline', 'about', 'company', 'branches', 'teams', 'agents', 'units', 'jobs', 'seo', 'users', 'backup', 'account'],
+  editor: ['overview', 'leads', 'sell', 'texts', 'skyline', 'about', 'company', 'branches', 'teams', 'agents', 'units', 'seo', 'backup', 'account'],
   hr: ['applications', 'jobs', 'account']
 };
 const myRole = () => (Store.me && Store.me.role) || 'admin';

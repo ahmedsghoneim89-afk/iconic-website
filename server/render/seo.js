@@ -5,6 +5,7 @@ const F = require('./frag');
 
 const root = (lang) => cfg.siteUrl + '/' + lang + '/';
 const urls = {
+  sell: (l) => '/' + l + '/sell', sellTrack: (l, token) => '/' + l + '/sell/track/' + token,
   careers: (l) => '/' + l + '/careers', job: (l, slug) => '/' + l + '/careers/' + slug,
   home: (l) => '/' + l + '/', developers: (l) => '/' + l + '/developers', developer: (l, slug) => '/' + l + '/developers/' + slug, projects: (l) => '/' + l + '/projects', project: (l, slug) => '/' + l + '/projects/' + slug, area: (l, slug) => '/' + l + '/areas/' + slug, props: (l) => '/' + l + '/properties', region: (l, id) => '/' + l + '/properties/' + id, prop: (l, slug) => '/' + l + '/property/' + slug
 };
@@ -55,7 +56,7 @@ function entries(c0, ctxFor) {
   const out = [], cs = { en: ctxFor('en'), ar: ctxFor('ar') };
   const alt = (fn) => ['en', 'ar'].map((l) => [l, cfg.siteUrl + fn(l)]).concat([['x-default', cfg.siteUrl + fn(cfg.defaultLang)]]);
   const top = cs.en.updated || Date.now();
-  out.push({ alt: alt(urls.home), lastmod: top }); out.push({ alt: alt(urls.props), lastmod: top });
+  out.push({ alt: alt(urls.home), lastmod: top }); out.push({ alt: alt(urls.props), lastmod: top }); out.push({ alt: alt(urls.sell), lastmod: top });
   F.activeRegions(cs.en).forEach((r) => {
     const ps = cs.en.props.filter((p) => p.region === r.id); if (!ps.length) return;
     out.push({ alt: alt((l) => urls.region(l, r.id)), lastmod: Math.max(...ps.map((p) => p.updatedAt)) });

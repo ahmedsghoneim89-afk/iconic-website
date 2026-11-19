@@ -222,7 +222,8 @@ function viewOverview() {
     e.target.disabled = true;
     try { for (let i = 0; i < REGIONS.length; i++) { const r = REGIONS[i]; await dbSet('teams', 't-' + r.id, { regions: [r.id], region: r.id, name: { en: r.en + ' team', ar: 'فريق ' + r.ar }, order: (i + 1) * 10 }); } toast(ta('f.saved')); } catch (err) { console.warn(err); toast(ta('f.failed'), true); e.target.disabled = false; }
   }, text: ta('ov.seed') })) : null;
-  return h('div', null, sectionHead(ta('nav.overview'), ta('ov.lead')),
+  const sellNew = SERVER && AS.newSell ? h('div', { class: 'adm__card adm__card--alert' }, h('p', { text: ta('sl.ovNew', { n: fmtNum(AS.newSell) }) }), h('button', { type: 'button', class: 'btn btn--small btn--primary', onclick: () => { AS.sellFilter = 'new'; AS.sellOpen = null; goSec('sell'); }, text: ta('ov.view') })) : null;
+  return h('div', null, sectionHead(ta('nav.overview'), ta('ov.lead')), sellNew,
     h('div', { class: 'adm__stats' }, stat(R.teams.length, ta('ov.teams'), 'teams'), stat(R.agents.length, ta('ov.agents'), 'agents'), stat(R.properties.length, ta('ov.units'), 'units')),
     seed,
     h('div', { class: 'adm__quick' }, [['texts', 'ov.q.texts'], ['skyline', 'ov.q.skyline'], ['about', 'ov.q.about'], ['company', 'ov.q.company']].map(([sec, k]) => h('button', { type: 'button', class: 'btn btn--small', onclick: () => goSec(sec), text: ta(k) }))),
@@ -344,7 +345,7 @@ const stripId = (r) => { const o = Object.assign({}, r); delete o.id; return o; 
 
 /* ----- units ----- */
 function viewUnits() {
-  if (AS.form && AS.form.kind === 'unit') return unitForm(AS.form.id);
+  if (AS.form && AS.form.kind === 'unit') return unitForm(AS.form.id, AS.form.prefill, AS.form.fromSell);
   const R = Store.raw, F = AS.filters;
   const sel = (key, blank, opts) => { const s = h('select', { class: 'ai ai--inline', 'aria-label': blank, onchange: (e) => { F[key] = e.target.value; drawAdmin(); } }, h('option', { value: '', text: blank }), opts.map(([v, l]) => h('option', { value: v, text: l }))); s.value = F[key]; return s; };
   const q = h('input', { class: 'ai ai--inline', type: 'search', placeholder: ta('un.search'), 'aria-label': ta('un.search'), value: F.q, oninput: (e) => { F.q = e.target.value; clearTimeout(q._t); q._t = setTimeout(() => { drawAdmin(); const n = $('input[type=search]', admBody); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); } });
@@ -360,9 +361,10 @@ function viewUnits() {
     h('div', { class: 'adm__filters' }, sel('region', ta('un.allRegions'), regionOptions()), sel('agent', ta('un.allAgents'), [['-', ta('un.unassigned')]].concat(R.agents.map((a) => [a.id, nameOf(a.name)]))), q),
     rows.length ? h('ul', { class: 'adm__list' }, rows) : h('p', { class: 'adm__empty', text: R.properties.length ? '' : ta('un.empty') }));
 }
-function unitForm(id) {
-  const r = id ? rawOf('properties', id) : null, gal = { v: r && Array.isArray(r.images) ? r.images.slice() : [] };
-  const del = r ? async () => {
+function unitForm(id, prefill, fromSell) {
+  const ex = id ? rawOf('properties', id) : null, r = ex || prefill || null, gal = { v: r && Array.isArray(r.images) ? r.images.slice() : [] };
+  const leave = () => { AS.form = null; if (fromSell) { AS.sec = 'sell'; AS.sellOpen = fromSell; } drawAdmin(); };
+  const del = ex ? async () => {
     if (!(await ask(ta('un.del', { name: nameOf(r.title) })))) return;
     try { await dbDel('properties', id); toast(ta('f.saved')); AS.form = null; drawAdmin(); } catch (e) { console.warn(e); toast(ta('f.failed'), true); }
   } : null;
@@ -389,9 +391,13 @@ function unitForm(id) {
       ['region', 'type', 'purpose'].forEach((k) => { if (k === 'region' && derived) { setErr(f, k, ''); return; } bad = setErr(f, k, v(k) ? '' : ta('f.req')) || bad; });
       return bad ? null : { title, project: readBil(f, 'project'), projectId: f.elements.projectId ? v('projectId') : ((r && r.projectId) || ''), region: derived || v('region'), type: v('type'), purpose: v('purpose'), location: readBil(f, 'location'), agent: v('agent') || '', price: numOrNull(v('price')), currency: v('currency') || 'EGP', beds: numOrNull(v('beds')), baths: numOrNull(v('baths')), area: numOrNull(v('area')), description: readBil(f, 'description'), images: gal.v, order: numOrNull(v('order')), ...(SERVER ? { seoTitle: readBil(f, 'seoTitle'), seoDescription: readBil(f, 'seoDescription') } : {}) };
     },
-    write: async (d) => { await dbSet('properties', id || newId('p'), d); AS.form = null; drawAdmin(); }
-  }, () => { AS.form = null; drawAdmin(); }, del);
-  return h('div', null, backHead(r ? ta('un.edit') : ta('un.new')), f);
+    write: async (d) => {
+      const nid = id || newId('p'); await dbSet('properties', nid, d);
+      if (fromSell) { try { await Store.rest.call('POST', '/sell/' + fromSell + '/link-unit', { unit: nid, publish: true }); toast(ta('sl.published')); } catch (e) { console.warn(e); toast(ta('sl.linkFail'), true); } refreshSellCount(); }
+      leave();
+    }
+  }, leave, del);
+  return h('div', null, h('header', { class: 'adm__head' }, h('div', null, h('button', { type: 'button', class: 'adm__link', onclick: leave, text: '‹ ' + ta('back') }), h('h2', { text: ex ? ta('un.edit') : ta('un.new') }))), f);
 }
 
 /* ----- backup ----- */
@@ -419,7 +425,7 @@ function viewBackup() {
 const VIEWS = { overview: viewOverview, company: viewCompany, teams: viewTeams, agents: viewAgents, units: viewUnits, backup: viewBackup };
 function drawChrome() {
   $('.adm__title', admEl).textContent = ta('title'); $('.adm__lang', admEl).textContent = ta('lang'); $('.adm__x', admEl).textContent = ta('close');
-  $$('.adm__nav button', admEl).forEach((b) => { b.textContent = ta('nav.' + b.dataset.sec) + (b.dataset.sec === 'leads' && AS.newLeads ? ' (' + fmtNum(AS.newLeads) + ')' : '') + (b.dataset.sec === 'applications' && AS.newApps ? ' (' + fmtNum(AS.newApps) + ')' : ''); b.setAttribute('aria-current', String(b.dataset.sec === AS.sec)); });
+  $$('.adm__nav button', admEl).forEach((b) => { b.textContent = ta('nav.' + b.dataset.sec) + (b.dataset.sec === 'leads' && AS.newLeads ? ' (' + fmtNum(AS.newLeads) + ')' : '') + (b.dataset.sec === 'applications' && AS.newApps ? ' (' + fmtNum(AS.newApps) + ')' : '') + (b.dataset.sec === 'sell' && AS.newSell ? ' (' + fmtNum(AS.newSell) + ')' : ''); b.setAttribute('aria-current', String(b.dataset.sec === AS.sec)); });
   const warn = $('.adm__warn', admEl); warn.hidden = !(!Store.db || Store.error); warn.textContent = !Store.db ? ta('store.off') : ta('store.err');
 }
 function drawAdmin() {
@@ -447,7 +453,7 @@ function openAdmin() {
   if (!Store.canEdit) return;
   if (!admEl) buildAdmin();
   if (!SECTIONS.includes(AS.sec)) AS.sec = SECTIONS[0];
-  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); loadCatalog(); }
+  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); refreshSellCount(); loadCatalog(); }
   $('.adm__nav button[aria-current=true]', admEl).focus({ preventScroll: true });
 }
 function closeAdmin() { if (!admEl) return; AS.open = false; admEl.hidden = true; root.style.overflow = ''; if (location.hash === '#admin') { try { history.replaceState(null, '', location.pathname + location.search); } catch (_) { /* ignore */ } } }

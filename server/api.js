@@ -6,6 +6,7 @@ const store = require('./db');
 const auth = require('./auth');
 const content = require('./content');
 const applications = require('./applications');
+const sell = require('./sell');
 const catalog = require('./catalog');
 const catalogAdmin = require('./catalog_admin');
 const { readJson, readBody, sha } = require('./util');
@@ -104,6 +105,9 @@ async function handle(req, res, url) {
 
   if (p === '/leads' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return createLead(req, res); }
   if (p === '/applications' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return applications.create(req, res); }
+  /* "sell your unit": the form, then the photos one by one with the private token the form handed back */
+  if (p === '/sell' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return sell.create(req, res); }
+  if (seg[0] === 'sell' && seg.length === 3 && seg[2] === 'files' && m === 'POST' && sell.isToken(seg[1])) { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return sell.addFile(req, res, seg[1], url); }
   /* the CRM's signed events: no browser session, the signature is the proof */
   if (p === '/catalog/events' && m === 'POST') return catalog.receive(req, res);
   if (p === '/login' && m === 'POST') {
@@ -180,6 +184,15 @@ async function handle(req, res, url) {
     if (p === '/applications.csv' && m === 'GET') return applications.csv(res);
     if (!seg[1] && m === 'GET') return applications.list(req, res, url);
     if (seg[1] && /^\d+$/.test(seg[1])) return applications.item(req, res, Number(seg[1]), seg[2]);
+    throw err(404, 'not found');
+  }
+
+  /* ---- sell requests (admin and editor; only an admin may delete one) ---- */
+  if (seg[0] === 'sell' || p === '/sell.csv') {
+    need(s, CONTENT_WRITERS);
+    if (p === '/sell.csv' && m === 'GET') return sell.csv(res);
+    if (!seg[1] && m === 'GET') return sell.list(req, res, url);
+    if (seg[1] && /^\d+$/.test(seg[1])) return sell.item(req, res, Number(seg[1]), seg[2], seg[3], s, url);
     throw err(404, 'not found');
   }
 

@@ -16,6 +16,8 @@ const { homePage } = require('./render/home');
 const SEO = require('./render/seo');
 const CP = require('./render/catalog_pages');
 const T = require('./render/templates');
+const SP = require('./render/sell_pages');
+const sell = require('./sell');
 
 const LANGS = ['ar', 'en'];
 const REGION_IDS = Ctx.REGIONS.map((r) => r.id);
@@ -156,6 +158,12 @@ async function route(req, res) {
   if (seg[1] === 'properties' && seg.length === 3) {
     if (!REGION_IDS.includes(seg[2])) return notFound(req, res, lang);
     return sendPage(req, res, cached('region:' + lang + ':' + seg[2], () => ({ html: Pages.regionPage(ctxFor(lang), seg[2]) })));
+  }
+  /* "sell your unit": the form is an ordinary cached page; the sender's own page is private, built fresh each time and never kept by caches or search engines */
+  if (seg[1] === 'sell' && seg.length === 2) return sendPage(req, res, cached('sell:' + lang, () => ({ html: SP.sellPage(ctxFor(lang)) })));
+  if (seg[1] === 'sell' && seg.length === 4 && seg[2] === 'track') {
+    const t = sell.track(seg[3]); if (!t) return notFound(req, res, lang);
+    return send(req, res, 200, SP.trackPage(ctxFor(lang), t), 'text/html; charset=utf-8', { 'Content-Security-Policy': csp([]), 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' });
   }
   if (seg[1] === 'careers' && seg.length === 2) return sendPage(req, res, cached('careers:' + lang + ':' + new Date().toISOString().slice(0, 10), () => ({ html: Pages.careersPage(ctxFor(lang)) })));
   if (seg[1] === 'careers' && seg.length === 3) {

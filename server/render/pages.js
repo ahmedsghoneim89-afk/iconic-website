@@ -37,6 +37,7 @@ function innerHeader(c, o) {
   const l = c.lang, o2 = other(l), cur = (k) => (o.nav === k ? ' aria-current="true"' : '');
   const lis = [`<li><a class="nav__link" href="/${l}/">${esc(c.t('pg.home'))}</a></li>`, `<li><a class="nav__link" href="/${l}/properties"${cur('props')}>${esc(c.t('nav.properties'))}</a></li>`];
   if (c.catalog.shownProjects.length) lis.push(`<li><a class="nav__link" href="/${l}/projects"${cur('projects')}>${esc(c.t('nav.projects'))}</a></li>`, `<li><a class="nav__link" href="/${l}/developers"${cur('devs')}>${esc(c.t('nav.developers'))}</a></li>`);
+  lis.push(`<li><a class="nav__link" href="/${l}/sell"${cur('sell')}>${esc(c.t('nav.sell'))}</a></li>`);
   if (c.layout.teams) lis.push(`<li><a class="nav__link" href="/${l}/#teams">${esc(c.t('nav.teams'))}</a></li>`);
   if (c.layout.about) lis.push(`<li><a class="nav__link" href="/${l}/#about">${esc(c.t('nav.about'))}</a></li>`);
   lis.push(`<li><a class="nav__link" href="/${l}/#contact">${esc(c.t('nav.contact'))}</a></li>`);
@@ -54,7 +55,7 @@ function innerFooter(c, o) {
 ${F.activeRegions(c).length ? `<nav aria-label="${esc(c.t('home.regions'))}"><h2 class="foot__h">${esc(c.t('home.regions'))}</h2><ul>${F.activeRegions(c).map((r) => `<li><a href="/${l}/properties/${r.id}">${esc(r[l])}</a></li>`).join('')}</ul></nav>` : ''}
 ${c.catalog.shownProjects.length ? `<nav aria-label="${esc(c.t('nav.projects'))}"><h2 class="foot__h">${esc(c.t('nav.projects'))}</h2><ul><li><a href="/${l}/projects">${esc(c.t('pg.proj.title'))}</a></li><li><a href="/${l}/developers">${esc(c.t('pg.dev.title'))}</a></li></ul></nav>` : ''}
 <div class="foot__contact"><h2 class="foot__h">${esc(c.t('nav.contact'))}</h2>${acts ? `<div class="contact-actions">${acts}</div>` : ''}<div class="contact-info">${info}</div></div></div>
-<div class="wrap foot__base"><span class="foot__copy">© ${new Date().getFullYear()} ${esc(c.t('foot.rights'))}</span><a class="foot__link" href="/${l}/careers">${esc(c.t('foot.careers'))}</a></div></footer>`;
+<div class="wrap foot__base"><span class="foot__copy">© ${new Date().getFullYear()} ${esc(c.t('foot.rights'))}</span><a class="foot__link" href="/${l}/sell">${esc(c.t('foot.sell'))}</a><a class="foot__link" href="/${l}/careers">${esc(c.t('foot.careers'))}</a></div></footer>`;
 }
 function crumbsHtml(c, items) {
   return `<nav class="crumbs" aria-label="Breadcrumb"><ol>${items.map((it, i) => (i === items.length - 1 ? `<li aria-current="page">${esc(it[0])}</li>` : `<li><a href="${esc(it[1])}">${esc(it[0])}</a></li>`)).join('')}</ol></nav>`;

@@ -6,6 +6,7 @@ const cfg = require('./config');
 
 fs.mkdirSync(path.join(cfg.dataDir, 'uploads'), { recursive: true });
 fs.mkdirSync(path.join(cfg.dataDir, 'cv'), { recursive: true, mode: 0o700 });
+fs.mkdirSync(path.join(cfg.dataDir, 'sell'), { recursive: true, mode: 0o700 });
 const db = new DatabaseSync(path.join(cfg.dataDir, 'iconic.db'));
 db.exec(`
 PRAGMA journal_mode = WAL;
@@ -23,6 +24,18 @@ CREATE TABLE IF NOT EXISTS applications (
   id INTEGER PRIMARY KEY AUTOINCREMENT, created_at INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'new', job_id TEXT, job_title TEXT,
   name TEXT NOT NULL, phone TEXT, email TEXT, message TEXT, cv_id TEXT, cv_name TEXT, cv_mime TEXT, cv_bytes INTEGER, lang TEXT, ip_hash TEXT, note TEXT);
 CREATE INDEX IF NOT EXISTS applications_created ON applications (created_at DESC);
+/* "Sell your unit" requests: what the owner sent, a private link token for tracking, and the history of what happened to it. Photos and ownership papers live in data/sell, never in a public folder. */
+CREATE TABLE IF NOT EXISTS sell_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, token TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'new', lang TEXT, who TEXT,
+  name TEXT NOT NULL, phone TEXT, email TEXT, city_id TEXT, city_name TEXT, area_id TEXT, area_name TEXT, project_id TEXT, project_name TEXT,
+  type TEXT, purpose TEXT, area_m2 REAL, beds INTEGER, baths INTEGER, finishing TEXT, floor TEXT, price REAL, currency TEXT, valuation INTEGER NOT NULL DEFAULT 0, negotiable INTEGER NOT NULL DEFAULT 0,
+  details TEXT, video_url TEXT, photos_declared INTEGER NOT NULL DEFAULT 0, agent_id TEXT, client_note TEXT, unit_id TEXT, wa_state TEXT, ip_hash TEXT);
+CREATE INDEX IF NOT EXISTS sell_requests_created ON sell_requests (created_at DESC);
+CREATE INDEX IF NOT EXISTS sell_requests_status ON sell_requests (status, created_at DESC);
+CREATE TABLE IF NOT EXISTS sell_events (id INTEGER PRIMARY KEY AUTOINCREMENT, request_id INTEGER NOT NULL, at INTEGER NOT NULL, kind TEXT NOT NULL, actor TEXT, from_status TEXT, to_status TEXT, text TEXT, public INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS sell_events_req ON sell_events (request_id, at);
+CREATE TABLE IF NOT EXISTS sell_files (id TEXT PRIMARY KEY, request_id INTEGER NOT NULL, kind TEXT NOT NULL, name TEXT, mime TEXT NOT NULL, bytes INTEGER NOT NULL, pos INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS sell_files_req ON sell_files (request_id, kind, pos);
 /* CRM catalog link: events already handled (replay protection), the activity log, edits sent to the CRM, and small status values */
 CREATE TABLE IF NOT EXISTS catalog_events (event_id TEXT PRIMARY KEY, entity TEXT NOT NULL, entity_id TEXT NOT NULL, version INTEGER NOT NULL, received_at INTEGER NOT NULL, result TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS catalog_events_at ON catalog_events (received_at);
