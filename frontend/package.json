@@ -3,7 +3,7 @@
   "private": true,
   "description": "Front-end source for the ICONIC site. Only needed when you change the design or the default copy.",
   "scripts": {
-    "build": "node extract_i18n.js ../server/data/i18n.json && python3 build_server.py",
+    "build": "node extract_i18n.js ../server/i18n.json && python3 build_server.py",
     "icons": "node make_icons.js"
   },
   "devDependencies": {
