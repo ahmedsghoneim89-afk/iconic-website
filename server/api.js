@@ -146,7 +146,7 @@ async function handle(req, res, url) {
   if (seg[0] === 'db') {
     const col = seg[1], id = seg[2];
     if (m === 'GET' && col && !id) return json(res, 200, { docs: content.list(col) });
-    if (m === 'GET' && col && id) { const d = content.read(col, id); return d ? json(res, 200, { id, data: d.data }) : json(res, 404, { error: 'not found' }); }
+    if (m === 'GET' && col && id) { const d = content.read(col, id); return d ? json(res, 200, { id, data: d.data }) : noContent(res); }   // known document that was never saved: empty answer, not an error (unknown ids still 404 from content.read)
     if ((m === 'PUT' || m === 'DELETE') && col) need(s, WRITERS[col] || CONTENT_WRITERS);
     if (m === 'PUT' && col && id) { const data = content.write(col, id, await readJson(req, 512 * 1024)); return json(res, 200, { id, data }); }
     if (m === 'DELETE' && col && id) { content.del(col, id); return noContent(res); }
