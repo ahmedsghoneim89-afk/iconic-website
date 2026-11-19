@@ -1,0 +1,228 @@
+<a class="skip-link" href="#main" data-i18n="skip.content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div class="progress__bar" id="progressBar"></div></div>
+
+<!-- Static hero fallback: shown before WebGL is ready and permanently when WebGL is unavailable -->
+<div class="fallback-sky" id="fallbackSky" aria-hidden="true">%%FALLBACK_SVG%%</div>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<header class="hdr" id="hdr">
+  <a class="brand" href="#main" aria-label="ICONIC Real Estate">
+    <svg class="brand__mark" id="brandMark" aria-hidden="true" focusable="false"></svg>
+  </a>
+  <nav class="nav" id="nav" aria-label="Primary">
+    <ul class="nav__list">
+      <li><a class="nav__link" href="#skyline" data-i18n="nav.skyline">Skyline</a></li>
+      <li><a class="nav__link" href="#properties" data-i18n="nav.properties">Properties</a></li>
+      <li><a class="nav__link" href="#teams" data-i18n="nav.teams">Teams</a></li>
+      <li><a class="nav__link" href="#about" data-i18n="nav.about">About</a></li>
+      <li><a class="nav__link" href="#contact" data-i18n="nav.contact">Contact</a></li>
+    </ul>
+    <a class="btn btn--small btn-cta" href="#contact" data-cta="viewing" data-magnetic data-i18n="cta.viewing">Request a viewing</a>
+  </nav>
+  <button class="lang" id="langBtn" type="button" lang="ar" aria-label="Switch to Arabic">العربية</button>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="nav" data-i18n="nav.menu">Menu</button>
+</header>
+
+<nav class="chapters" id="chapters" aria-label="Chapters">
+  <ol>
+    <li><a href="#scene-city" data-chap="scene-city"><span data-i18n="chap.city">City</span></a></li>
+    <li><a href="#skyline" data-chap="skyline"><span data-i18n="chap.skyline">Skyline</span></a></li>
+    <li><a href="#properties" data-chap="properties"><span data-i18n="chap.properties">Properties</span></a></li>
+    <li><a href="#teams" data-chap="teams"><span data-i18n="chap.teams">Teams</span></a></li>
+    <li><a href="#about" data-chap="about"><span data-i18n="chap.story">Story</span></a></li>
+    <li><a href="#contact" data-chap="contact"><span data-i18n="chap.contact">Contact</span></a></li>
+  </ol>
+</nav>
+
+<!-- Scene 01: signature intro. Never blocks navigation: header stays above it, any scroll or key skips it. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <canvas class="intro__particles" id="introParticles"></canvas>
+  <div class="intro__stage" id="introStage">
+    <svg class="intro__emblem" id="introEmblem" aria-hidden="true" focusable="false"></svg>
+    <div class="intro__sweep" id="introSweep"></div>
+  </div>
+</div>
+<button class="intro__skip" id="skipIntro" type="button" data-i18n="intro.skip">Skip intro</button>
+
+<main id="main" tabindex="-1">
+  <div class="city-range" id="cityRange">
+    <!-- Scene 02: enter the city -->
+    <section class="hero" id="scene-city" aria-labelledby="hero-title">
+      <div class="hero__sticky">
+        <div class="hero__copy" id="heroCopy">
+          <h1 class="hero__title" id="hero-title" data-i18n="hero.title">Beyond the ordinary.</h1>
+          <p class="hero__support" id="heroSupport" data-i18n="hero.support">Exceptional properties and investment insight, matched to what you are looking for.</p>
+          <div class="cta-row" id="heroCta">
+            <a class="btn btn--primary" href="#skyline" data-magnetic data-i18n="hero.explore">Explore the skyline</a>
+            <a class="btn" href="#contact" data-cta="viewing" data-magnetic data-i18n="cta.viewing">Request a viewing</a>
+          </div>
+        </div>
+        <div class="hero__scroll" id="heroScroll" aria-hidden="true"><i></i><span data-i18n="hero.scroll">Scroll</span></div>
+      </div>
+    </section>
+
+    <!-- Scene 03: discover the skyline -->
+    <section class="skyline" id="skyline" aria-labelledby="sky-title">
+      <div class="stage" id="stage">
+        <div class="hs-layer" id="hsLayer"></div>
+        <div class="stage__ui">
+          <div class="stage__head">
+            <h2 class="stage__title" id="sky-title" data-i18n="sky.title">Discover the skyline</h2>
+            <p class="stage__hint" id="skyHint" data-i18n="sky.hint.pointer">Drag to steer. Scroll to move forward. Select a marker to fly there.</p>
+          </div>
+          <aside class="hs-card" id="hsCard" hidden aria-live="polite"></aside>
+          <div class="stage__bar">
+            <ul class="chips" id="hsList" aria-label="Skyline points"></ul>
+            <div class="tools">
+              <button class="chip" id="btnRecenter" type="button" data-i18n="sky.recenter">Recenter view</button>
+              <button class="chip" id="btnRotate" type="button" aria-pressed="false" data-i18n="sky.rotate">Auto-rotate</button>
+              <button class="chip" id="btnGyro" type="button" aria-pressed="false" hidden data-i18n="sky.gyro">Tilt with device</button>
+            </div>
+          </div>
+        </div>
+        <p class="sr-only" id="gyroMsg" role="status"></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scene 04: property discovery -->
+  <section class="props" id="properties" aria-labelledby="props-title" data-spotlight>
+    <div class="wrap">
+      <div class="props__head">
+        <h2 class="h2" id="props-title" data-i18n="props.title">Property discovery</h2>
+        <p class="lede" data-i18n="props.lede">Approved listings appear here, with filters that come from the listing data.</p>
+      </div>
+      <div class="agentfilter" id="agentFilter" hidden>
+        <span id="agentFilterText"></span>
+        <button class="chip" id="agentFilterClear" type="button" data-i18n="props.agentfilter.clear">Show all units</button>
+      </div>
+      <div class="filters" id="filters" hidden></div>
+      <p class="note" id="propsCount" aria-live="polite"></p>
+      <div class="grid" id="propsGrid"></div>
+      <div class="empty" id="propsEmpty">
+        <svg class="empty__art" id="emptyArt" aria-hidden="true" focusable="false"></svg>
+        <h3 data-i18n="props.empty.title">No listings published yet</h3>
+        <p data-i18n="props.empty.body">Once ICONIC approves its listings, they appear here with filters for type, purpose and location.</p>
+        <button class="btn" id="previewBtn" type="button" aria-pressed="false" data-i18n="props.preview">Preview the card layout</button>
+      </div>
+      <p class="note" id="previewNote" hidden data-i18n="props.preview.note">Sample cards for layout review only. These are not real listings.</p>
+    </div>
+  </section>
+
+  <!-- Sales teams: one team per region, agents with photo, linked units and contact details -->
+  <section class="teams" id="teams" aria-labelledby="teams-title" data-spotlight>
+    <div class="wrap">
+      <div class="props__head">
+        <h2 class="h2" id="teams-title" data-i18n="teams.title">Sales teams</h2>
+        <p class="lede" data-i18n="teams.lede">One team for each region. Meet the agents, see the units they handle and contact them directly.</p>
+      </div>
+      <div class="filters" id="teamFilters" hidden></div>
+      <div class="teams__list" id="teamsList"></div>
+      <div class="empty" id="teamsEmpty">
+        <svg class="empty__art" id="teamsArt" aria-hidden="true" focusable="false"></svg>
+        <h3 data-i18n="teams.empty.title">No sales teams published yet</h3>
+        <p data-i18n="teams.empty.body">Once the sales teams are added, they appear here by region with agent photos, their units and contact details.</p>
+        <button class="btn" id="teamsPreviewBtn" type="button" aria-pressed="false" data-i18n="teams.preview">Preview the team layout</button>
+      </div>
+      <p class="note" id="teamsNote" hidden data-i18n="teams.preview.note">Sample teams and agents for layout review only. These are not real people.</p>
+    </div>
+  </section>
+
+  <!-- Scene 06: brand story -->
+  <section class="story" id="about" aria-labelledby="story-title" data-spotlight>
+    <svg class="story__art" id="storyArt" aria-hidden="true" focusable="false"></svg>
+    <div class="wrap story__grid">
+      <div class="story__lede">
+        <h2 class="h2" id="story-title" data-i18n="story.title">What ICONIC stands for</h2>
+        <p class="lede" data-i18n="story.lede">One identity, carried through every page, conversation and property we present.</p>
+      </div>
+      <ol class="pillars" id="pillars"></ol>
+    </div>
+  </section>
+
+  <!-- Scene 07: conversion -->
+  <section class="convert" id="contact" aria-labelledby="conv-title" data-spotlight>
+    <div class="wrap convert__grid">
+      <div>
+        <h2 class="convert__title shimmer" id="conv-title" data-i18n="conv.title">Your next chapter starts here.</h2>
+        <p class="lede" style="margin-block-start:var(--s-5)" data-i18n="conv.lede">Tell us what you are looking for.</p>
+        <div class="contact-actions" id="contactActions"></div>
+        <div class="contact-info" id="contactInfo"></div>
+      </div>
+      <form class="form" id="leadForm" novalidate aria-labelledby="form-title">
+        <h3 id="form-title" data-i18n="form.title">Inquiry or viewing</h3>
+        <fieldset class="seg">
+          <legend data-i18n="form.interest">I would like to</legend>
+          <label><input type="radio" name="interest" value="inquiry" checked><span data-i18n="form.interest.inquiry">Send an inquiry</span></label>
+          <label><input type="radio" name="interest" value="viewing"><span data-i18n="form.interest.viewing">Request a viewing</span></label>
+        </fieldset>
+        <div class="field">
+          <label for="f-name" data-i18n="form.name">Full name</label>
+          <input id="f-name" name="name" type="text" autocomplete="name" required aria-describedby="e-name">
+          <p class="err" id="e-name" role="alert"></p>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="f-phone" data-i18n="form.phone">Phone</label>
+            <input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" aria-describedby="e-phone">
+            <p class="err" id="e-phone" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="f-email" data-i18n="form.email">Email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" aria-describedby="e-email">
+            <p class="err" id="e-email" role="alert"></p>
+          </div>
+        </div>
+        <p class="err" id="e-contact" role="alert" style="margin-block-start:calc(var(--s-3) * -1)"></p>
+        <div class="field">
+          <label for="f-msg" data-i18n="form.message">Message</label>
+          <textarea id="f-msg" name="message" rows="3"></textarea>
+        </div>
+        <input type="hidden" id="f-property" name="property" value="">
+        <input type="hidden" id="f-agent" name="agent" value="">
+        <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+        <label class="consent"><input type="checkbox" id="f-consent" name="consent" aria-describedby="e-consent"><span data-i18n="form.consent">I agree to be contacted about this request.</span></label>
+        <p class="err" id="e-consent" role="alert" style="margin-block-start:calc(var(--s-3) * -1)"></p>
+        <button class="btn btn--primary" id="submitBtn" type="submit" data-magnetic data-i18n="form.submit.inquiry">Send inquiry</button>
+        <p class="status" id="formStatus" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<!-- Scene 05: property experience overlay -->
+<div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+  <button class="detail__close" id="detailClose" type="button" data-i18n="prop.close">Close details</button>
+  <div class="detail__in" id="detailIn">
+    <div class="detail__media" id="detailMedia"></div>
+    <div class="detail__body">
+      <h2 class="detail__title" id="detailTitle"></h2>
+      <p id="detailLoc"></p>
+      <p class="detail__price" id="detailPrice"></p>
+      <p id="detailDesc"></p>
+      <dl class="specs" id="detailSpecs"></dl>
+      <div class="agentline" id="detailAgent" hidden></div>
+      <p class="note" id="detailFlag" hidden></p>
+      <div class="cta-row">
+        <button class="btn btn--primary" type="button" data-cta="inquiry" data-i18n="cta.inquiry">Send an inquiry</button>
+        <button class="btn" type="button" data-cta="viewing" data-i18n="cta.viewing">Request a viewing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <a class="foot__brand" href="#main" aria-label="ICONIC Real Estate"><svg class="foot__logo" id="footLogo" aria-hidden="true" focusable="false"></svg></a>
+    <span class="foot__copy">© <span id="year"></span> <span data-i18n="foot.rights">ICONIC Real Estate</span></span>
+    <button class="linklike" id="replayIntro" type="button" data-i18n="foot.replay">Replay intro</button>
+    <button class="linklike" id="adminLink" type="button" hidden data-i18n="foot.admin">Admin dashboard</button>
+  </div>
+</footer>
+
+<div class="mbar" id="mbar">
+  <button class="btn btn--primary" type="button" data-cta="viewing" data-i18n="mobile.viewing">Request viewing</button>
+  <button class="btn" type="button" data-cta="inquiry" data-i18n="mobile.inquiry">Inquire</button>
+</div>
+<div class="cursor" id="cursor" aria-hidden="true"></div>
+<noscript><style>.intro,.intro__skip{display:none!important}#gl{display:none}</style></noscript>
