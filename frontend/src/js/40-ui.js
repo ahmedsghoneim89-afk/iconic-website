@@ -181,7 +181,7 @@ function applyFilters() {
   const cards = $$('.card'); let n = 0, shown = [];
   cards.forEach((c) => { const p = c._prop, f = App.filters, ok = (!f.type || p.type === f.type) && (!f.purpose || p.purpose === f.purpose) && (!f.region || p.region === f.region) && (!f.agent || p.agent === f.agent); c.hidden = !ok; if (ok) { n++; shown.push(c); } });
   $('#propsCount').textContent = shownProps().length ? t('props.count', { n: fmtNum(n) }) : '';
-  if (hasGSAP() && !App.reduced) gsap.fromTo(shown, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: MOTION.duration.base, ease: MOTION.ease.standard, stagger: MOTION.stagger.tight, overwrite: true, clearProps: 'transform,opacity' });
+  if (hasGSAP() && !App.reduced && shown.length) gsap.fromTo(shown, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: MOTION.duration.base, ease: MOTION.ease.standard, stagger: MOTION.stagger.tight, overwrite: true, clearProps: 'transform,opacity' });
 }
 function mediaFor(p, cls) {
   const img = safeUrl(p.images && p.images[0]);
