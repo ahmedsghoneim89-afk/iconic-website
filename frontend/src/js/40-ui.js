@@ -2,7 +2,7 @@
    40 — UI layer: i18n, navigation, scroll controller, properties (Scenes 04–05),
    brand story (06), conversion form (07), micro-interactions, boot.
    ========================================================================== */
-let mgr = null, cardST = [], lastFocus = null;
+let mgr = null, cardST = [], agentST = [], lastFocus = null;
 
 /* ---------- helpers ---------- */
 function scrollToEl(el) {
@@ -307,6 +307,24 @@ function drawTeams() {
     sec.append(head, grid); list.appendChild(sec);
   });
   observeReveal($$('.agent', list));
+  stageAgents(list);
+}
+/* Agent portraits: the frame opens upwards like a curtain the first time it is seen, then, while the card crosses the screen, the portrait drifts
+   slowly inside its frame and a gold light rises behind the person, brightest at the middle of the screen (cut-out photos show it, flat photos do not mind). */
+function stageAgents(list) {
+  agentST.forEach((s) => s.kill()); agentST = [];
+  if (!hasGSAP() || App.reduced) return;
+  const frames = $$('.agent__photo:not(.is-ph)', list).filter((f) => f.querySelector('img')); if (!frames.length) return;
+  gsap.set(frames, { clipPath: 'inset(100% 0% 0% 0%)' });
+  agentST.push(...ScrollTrigger.batch(frames, { start: 'top 92%', once: true, onEnter: (batch) => gsap.to(batch, { clipPath: 'inset(0% 0% 0% 0%)', duration: MOTION.duration.slow, ease: MOTION.ease.inOut, stagger: MOTION.stagger.base, clearProps: 'clipPath', overwrite: 'auto' }) }));
+  frames.forEach((f) => {
+    const img = f.querySelector('img');
+    const tl = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: f, start: 'top bottom', end: 'bottom top', scrub: 0.7 } });
+    tl.fromTo(img, { yPercent: -5, scale: 1.1 }, { yPercent: 5, scale: 1.1, duration: 1 }, 0)
+      .fromTo(f, { '--lit': 0 }, { '--lit': 1, duration: 0.5, ease: 'power1.out' }, 0)
+      .to(f, { '--lit': 0.12, duration: 0.5, ease: 'power1.in' }, 0.5);
+    agentST.push(tl.scrollTrigger);
+  });
 }
 function renderTeams() {
   const set = teamSet(), filters = $('#teamFilters'), hasReal = DATA.teams.length > 0;
