@@ -38,23 +38,25 @@ const DeviceCapabilityManager = {
     return { webgl, renderer, mem, cores, coarse, soft, tier, mobile: mqMobile.matches };
   },
   profile(cap) {
-    if (cap.tier === 'high') return { dpr: 2, density: 1, clouds: 14, antialias: true, windows: 1 };
-    return cap.mobile ? { dpr: 1.25, density: 0.5, clouds: 5, antialias: false, windows: 0.9 }
-                      : { dpr: 1.5, density: 0.62, clouds: 8, antialias: false, windows: 1 };
+    /* maxPx caps the pixels actually shaded: a Retina laptop (or a big monitor) at devicePixelRatio 2 would otherwise draw 4x the pixels of a 1x screen
+       through every sky, ground, glass and cloud layer, which is what makes full-screen WebGL stutter on thin laptops. */
+    if (cap.tier === 'high') return { dpr: 1.5, maxPx: 2.6e6, density: 1, clouds: 8, antialias: false, windows: 1 };
+    return cap.mobile ? { dpr: 1.25, maxPx: 1.4e6, density: 0.5, clouds: 5, antialias: false, windows: 0.9 }
+                      : { dpr: 1.25, maxPx: 1.8e6, density: 0.62, clouds: 6, antialias: false, windows: 1 };
   }
 };
 
 class PerformanceMonitor {
   constructor(onDegrade) { this.onDegrade = onDegrade; this.level = 0; this.warm = 0; this.samples = []; this.fps = 60; }
-  tick(dt) {                                      // dt is the raw frame time: tab switches, throttled frames and hitches are not sustained load
-    if (dt > 0.25) { this.warm = Math.max(0, this.warm - 30); this.samples.length = 0; return; }
-    if (++this.warm < 90) return;
+  tick(dt) {                                      // dt is the raw frame time; only called while the scene is being driven (scrolling, dragging), not while it idles
+    if (dt > 0.25) { this.warm = Math.max(0, this.warm - 20); this.samples.length = 0; return; }
+    if (++this.warm < 45) return;
     this.samples.push(dt);
-    if (this.samples.length >= 90) {
+    if (this.samples.length >= 45) {
       this.fps = 1 / (this.samples.reduce((a, b) => a + b, 0) / this.samples.length);
       this.samples.length = 0;
-      /* each step down needs a clearly worse frame rate; the static fallback only when the scene is truly unusable */
-      if (this.fps < [26, 20, 12][Math.min(this.level, 2)]) { this.level++; this.warm = 0; this.onDegrade(this.level, this.fps); }
+      /* a smooth scroll needs ~60: step the resolution down as soon as it is clearly missed; the static fallback only when the scene is truly unusable */
+      if (this.fps < [50, 46, 14][Math.min(this.level, 2)]) { this.level++; this.warm = 0; this.onDegrade(this.level, this.fps); }
     }
   }
 }
@@ -620,7 +622,7 @@ class InteractionController {
 class SceneManager {
   constructor(canvas, cap) {
     this.canvas = canvas; this.cap = cap; this.cfg = DeviceCapabilityManager.profile(cap);
-    this.assets = new AssetLoader(); this.raf = 0; this.last = 0; this.visible = true; this.lost = false; this.destroyed = false; this.idle = 0; this.dpr = this.cfg.dpr;
+    this.assets = new AssetLoader(); this.raf = 0; this.last = 0; this.active = 0; this.visible = true; this.lost = false; this.destroyed = false; this.idle = 0; this.dpr = this.cfg.dpr;
     this.onFallback = () => {};
     this.frame = this.frame.bind(this);
   }
@@ -644,27 +646,33 @@ class SceneManager {
     const w = this.canvas.clientWidth || innerWidth, h = this.canvas.clientHeight || innerHeight;
     if (!force && this.w === w && Math.abs(this.h - h) < 120) return;       // ignore mobile URL-bar height jitter
     this.w = w; this.h = h;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, this.dpr)); this.renderer.setSize(w, h, false);
+    const px = Math.min(devicePixelRatio || 1, this.dpr, Math.sqrt(this.cfg.maxPx / Math.max(1, w * h)));
+    this.renderer.setPixelRatio(Math.max(0.75, px)); this.renderer.setSize(w, h, false);
     this.cam.setAspect(w / h); this.invalidate();
   }
   degrade(level) {
-    if (level === 1) { this.dpr = Math.min(this.dpr, 1); this.env.cloudGroup.visible = false; this.resize(true); }
-    else if (level === 2) { this.env.setDensity(this.cfg.density * 0.5); this.dpr = 1; this.resize(true); }
+    const cur = this.renderer.getPixelRatio();
+    if (level === 1) { this.dpr = Math.max(0.8, cur * 0.8); this.env.cloudGroup.visible = false; this.resize(true); }
+    else if (level === 2) { this.env.setDensity(this.cfg.density * 0.5); this.dpr = Math.max(0.75, cur * 0.8); this.resize(true); }
     else { this.onFallback(); }
   }
   setVisible(v) { this.visible = v; if (v) this.start(); else this.pause(); }
   start() { if (this.destroyed || this.lost || !this.visible || document.hidden || this.raf) return; this.last = performance.now(); this.idle = 0; this.raf = requestAnimationFrame(this.frame); }
   pause() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = 0; }
-  invalidate() { this.idle = 0; this.start(); }
+  invalidate() { this.idle = 0; this.active = performance.now(); this.start(); }
   frame(now) {
     this.raf = 0; if (this.destroyed || this.lost || !this.visible) return;
+    /* nothing is driving the scene (no scroll, drag or pointer for half a second): the ambient motion (clouds, traffic, light blink) runs at ~30 fps,
+       which halves the heat and battery draw and keeps the GPU free for the moment scrolling starts again */
+    const driven = App.introRunning || now - this.active < 500;
+    if (!driven && now - this.last < 30) { this.raf = requestAnimationFrame(this.frame); return; }
     const raw = (now - this.last) / 1000 || 0.016, dt = Math.min(0.1, raw); this.last = now;
     const moved = this.cam.update(dt, now / 1000);
     this.env.update(dt);
     if (App.stageActive && this.interaction) this.interaction.update();
     this.renderer.render(this.scene, this.camera);
     if (!root.classList.contains('gl-ready')) root.classList.add('gl-ready');
-    this.perf.tick(raw);
+    if (driven && !App.introRunning) this.perf.tick(raw);
     if (App.reduced) { this.idle = moved ? 0 : this.idle + 1; if (this.idle > 3) return; }
     this.raf = requestAnimationFrame(this.frame);
   }
