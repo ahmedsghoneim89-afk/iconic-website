@@ -1,0 +1,9 @@
+{$SITE_DOMAIN} {
+	encode zstd
+	reverse_proxy app:3000
+}
+
+# the other spelling of the domain (with or without www) goes to the main address
+{$ALT_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}

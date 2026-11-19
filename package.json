@@ -1,0 +1,14 @@
+{
+  "name": "iconic-realestate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ICONIC Real Estate: website, admin dashboard and enquiry inbox. No third-party runtime dependencies.",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "create-admin": "node --disable-warning=ExperimentalWarning server/cli.js create-admin",
+    "set-password": "node --disable-warning=ExperimentalWarning server/cli.js set-password",
+    "backup": "node --disable-warning=ExperimentalWarning server/cli.js backup"
+  }
+}

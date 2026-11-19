@@ -1,0 +1,36 @@
+# ICONIC Real Estate: the app plus Caddy, which gets and renews the HTTPS certificate by itself.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SITE_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN in .env}
+      TRUST_PROXY: "1"
+    volumes:
+      - iconic_data:/app/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      ALT_DOMAIN: ${ALT_DOMAIN:?Set ALT_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  iconic_data:
+    name: iconic_data
+  caddy_data:
+  caddy_config:
