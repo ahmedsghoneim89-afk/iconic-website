@@ -27,7 +27,7 @@ function hydrateData() {
   const R = Store.raw, byOrder = (a, b) => orderOf(a) - orderOf(b) || String(a.id).localeCompare(String(b.id));
   const co = R.company || {};
   DATA.company = { whatsapp: co.whatsapp || null, phone: co.phone || null, email: co.email || null, address: co.address || null, hours: co.hours || null, social: co.social && typeof co.social === 'object' ? co.social : {} };
-  DATA.formEndpoint = SERVER ? '/api/leads' : (httpsUrl(co.formEndpoint) || null);   // production: the server itself stores enquiries
+  DATA.formEndpoint = SERVER ? '/iconic-api/leads' : (httpsUrl(co.formEndpoint) || null);   // production: the server itself stores enquiries
   /* site texts: the shipped copy plus whatever the company has changed. Unknown keys and non-text values are ignored. */
   let textsChanged = false;
   ['en', 'ar'].forEach((lg) => {
@@ -72,7 +72,7 @@ function seedServerContent() {
 }
 async function enableServerAdmin() {
   try {
-    const me = await (await fetch('/api/me', { credentials: 'same-origin', headers: { Accept: 'application/json' } })).json();
+    const me = await (await fetch('/iconic-api/me', { credentials: 'same-origin', headers: { Accept: 'application/json' } })).json();
     if (!me || !me.admin) return;
     const rest = restClient(me.csrf);
     Store.db = rest.db; Store.user = { canEdit: async () => true }; Store.canEdit = true; Store.assets = rest.assets; Store.downloads = rest.downloads; Store.me = me; Store.rest = rest;
