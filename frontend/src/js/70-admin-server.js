@@ -64,7 +64,7 @@ function leadItem(l, reload) {
 function viewLeads() {
   const wrap = h('div'), chips = h('div', { class: 'chips ld__chips' }), list = h('div', { class: 'ld__list' }), more = h('button', { type: 'button', class: 'btn btn--small', text: ta('ld.more'), hidden: true });
   const state = { filter: AS.leadFilter || '', offset: 0, total: 0 }, PAGE = 30;
-  const csv = h('a', { class: 'btn btn--small', href: '/api/leads.csv', download: '', text: ta('ld.csv') });
+  const csv = h('a', { class: 'btn btn--small', href: '/iconic-api/leads.csv', download: '', text: ta('ld.csv') });
   const drawChips = (counts) => {
     chips.textContent = ''; const total = LEAD_STATUS.reduce((n, s) => n + (counts[s] || 0), 0);
     [['', ta('ld.all') + ' (' + fmtNum(total) + ')']].concat(LEAD_STATUS.map((s) => [s, ta('ld.s.' + s) + ' (' + fmtNum(counts[s] || 0) + ')'])).forEach(([v, label]) => {

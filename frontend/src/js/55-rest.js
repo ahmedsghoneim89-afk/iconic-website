@@ -6,7 +6,7 @@ function restClient(csrf) {
   const call = async (method, path, body, raw) => {
     const headers = { 'X-CSRF-Token': csrf, Accept: 'application/json' };
     if (raw) headers['Content-Type'] = raw.type; else if (body !== undefined) headers['Content-Type'] = 'application/json';
-    const res = await fetch('/api' + path, { method, credentials: 'same-origin', headers, body: raw ? raw.body : (body !== undefined ? JSON.stringify(body) : undefined) });
+    const res = await fetch('/iconic-api' + path, { method, credentials: 'same-origin', headers, body: raw ? raw.body : (body !== undefined ? JSON.stringify(body) : undefined) });
     if (res.status === 404 && method === 'GET') return null;
     if (!res.ok) { const e = new Error('http ' + res.status); e.code = res.status; throw e; }
     return res.status === 204 ? null : res.json();
