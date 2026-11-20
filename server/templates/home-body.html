@@ -93,13 +93,12 @@
       <div class="props__head">
         <h2 class="h2" id="props-title" data-i18n="props.title">Property discovery</h2>
         <p class="lede" data-i18n="props.lede">Approved listings appear here, with filters that come from the listing data.</p>
-        <!--SSR:regions-->
       </div>
       <div class="agentfilter" id="agentFilter" hidden>
         <span id="agentFilterText"></span>
         <button class="chip" id="agentFilterClear" type="button" data-i18n="props.agentfilter.clear">Show all units</button>
       </div>
-      <div class="filters" id="filters" hidden></div>
+      <!--SSR:filters-->
       <p class="note" id="propsCount" aria-live="polite"><!--SSR:count--></p>
       <div class="grid" id="propsGrid"><!--SSR:cards--></div>
       <div class="empty" id="propsEmpty">
@@ -135,9 +134,9 @@
 
   <!-- Scene 06: brand story -->
   <section class="story" id="about" aria-labelledby="story-title" data-spotlight>
-    <svg class="story__art" id="storyArt" aria-hidden="true" focusable="false"></svg>
     <div class="wrap story__grid">
       <div class="story__lede">
+        <svg class="story__art" id="storyArt" aria-hidden="true" focusable="false"></svg>
         <h2 class="h2" id="story-title" data-i18n="story.title">What ICONIC stands for</h2>
         <p class="lede" data-i18n="story.lede">One identity, carried through every page, conversation and property we present.</p>
       </div>

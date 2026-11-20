@@ -17,8 +17,8 @@ function homePage(c, opts) {
   let b = T.homeBody;
   b = b.replace(/(<(\w+)\b[^>]*\bdata-i18n="([^"]+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, key, old, close) => open + esc(c.t(key)) + close);
   b = b.replace('<!--SSR:cards-->', F.cards(c, c.props)).replace('<!--SSR:teams-->', F.teams(c)).replace('<!--SSR:pillars-->', F.pillars(c))
-    .replace('<!--SSR:catalog-->', CP.homeBlock(c)).replace('<!--SSR:navcat-->', c.catalog.shownProjects.length ? `<li><a class="nav__link" href="/${l}/projects">${esc(c.t('nav.projects'))}</a></li><li><a class="nav__link" href="/${l}/developers">${esc(c.t('nav.developers'))}</a></li>` : '')
-    .replace('<!--SSR:actions-->', F.contactActions(c)).replace('<!--SSR:info-->', F.contactInfo(c, { branches: false })).replace('<!--SSR:branches-->', F.branchesSection(c)).replace('<!--SSR:regions-->', F.regionLinks(c, null))
+    .replace('<!--SSR:catalog-->', CP.homeBlock(c)).replace('<!--SSR:filters-->', () => CP.unitFilterBlock(c, CP.resolveFilters(c, null))).replace('<!--SSR:navcat-->', c.catalog.shownProjects.length ? `<li><a class="nav__link" href="/${l}/projects">${esc(c.t('nav.projects'))}</a></li><li><a class="nav__link" href="/${l}/developers">${esc(c.t('nav.developers'))}</a></li>` : '')
+    .replace('<!--SSR:actions-->', F.contactActions(c)).replace('<!--SSR:info-->', F.contactInfo(c, { branches: false })).replace('<!--SSR:branches-->', F.branchesSection(c))
     .replace('<!--SSR:count-->', c.props.length ? esc(c.t('props.count', { n: c.fmtNum(c.props.length) })) : '')
     .replace('<!--SSR:year-->', String(new Date().getFullYear()));
   if (c.props.length) b = b.replace('<div class="empty" id="propsEmpty">', '<div class="empty" id="propsEmpty" hidden>');

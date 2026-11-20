@@ -64,7 +64,6 @@ const TX = [
   ] },
   { id: 'props', keys: [
     ['props.title', 'Section title', 'عنوان القسم'], ['props.lede', 'Intro', 'المقدمة', true], ['props.empty.title', 'Empty state: title', 'عند عدم وجود وحدات: العنوان'], ['props.empty.body', 'Empty state: text', 'عند عدم وجود وحدات: النص', true],
-    ['props.filter.all', 'Filter: all', 'المرشّح: الكل'], ['props.filter.type', 'Filter: type', 'المرشّح: النوع'], ['props.filter.purpose', 'Filter: purpose', 'المرشّح: الغرض'], ['props.filter.region', 'Filter: region', 'المرشّح: المنطقة'],
     ['prop.open', 'Card button', 'زر البطاقة'], ['prop.price.none', 'When there is no price', 'عند عدم وجود سعر'],
     ['prop.beds', 'Label: bedrooms', 'عنوان: غرف النوم'], ['prop.baths', 'Label: bathrooms', 'عنوان: الحمامات'], ['prop.area', 'Label: area', 'عنوان: المساحة'], ['prop.type', 'Label: type', 'عنوان: النوع'], ['prop.purpose', 'Label: purpose', 'عنوان: الغرض'], ['prop.location', 'Label: location', 'عنوان: الموقع'], ['prop.project', 'Label: project', 'عنوان: المشروع'],
     ['prop.close', 'Details: close button', 'التفاصيل: زر الإغلاق'], ['detail.agent', 'Details: handled by', 'التفاصيل: يتولاها']

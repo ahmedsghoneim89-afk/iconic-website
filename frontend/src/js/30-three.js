@@ -40,7 +40,7 @@ const DeviceCapabilityManager = {
   profile(cap) {
     /* maxPx caps the pixels actually shaded: a Retina laptop (or a big monitor) at devicePixelRatio 2 would otherwise draw 4x the pixels of a 1x screen
        through every sky, ground, glass and cloud layer, which is what makes full-screen WebGL stutter on thin laptops. */
-    if (cap.tier === 'high') return { dpr: 1.5, maxPx: 2.6e6, density: 1, clouds: 8, antialias: false, windows: 1 };
+    if (cap.tier === 'high') return { dpr: 2, maxPx: 3.2e6, density: 1, clouds: 8, antialias: true, windows: 1 };
     return cap.mobile ? { dpr: 1.25, maxPx: 1.4e6, density: 0.5, clouds: 5, antialias: false, windows: 0.9 }
                       : { dpr: 1.25, maxPx: 1.8e6, density: 0.62, clouds: 6, antialias: false, windows: 1 };
   }
@@ -151,7 +151,7 @@ class EnvironmentManager {
   buildSky() {
     const c = doc.createElement('canvas'); c.width = 1024; c.height = 512; const g = c.getContext('2d');
     const gr = g.createLinearGradient(0, 0, 0, 512);
-    [[0, '#04060d'], [.26, '#0c1325'], [.43, '#262a40'], [.455, '#5e4240'], [.482, '#d99c5f'], [.494, '#8a5e48'], [.503, FOG_HEX], [1, FOG_HEX]].forEach(([o, col]) => gr.addColorStop(o, col));
+    [[0, '#04060d'], [.26, '#0c1325'], [.43, '#262a40'], [.456, '#5e4240'], [.482, '#cf9459'], [.497, '#8e604a'], [.515, '#5b3f3b'], [.56, FOG_HEX], [1, FOG_HEX]].forEach(([o, col]) => gr.addColorStop(o, col));
     g.fillStyle = gr; g.fillRect(0, 0, 1024, 512);
     const glow = g.createRadialGradient(256, 238, 0, 256, 238, 260);        // u = .25 faces -z: behind the ICONIC tower
     glow.addColorStop(0, 'rgba(255,176,96,.62)'); glow.addColorStop(.4, 'rgba(214,128,80,.22)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
@@ -180,12 +180,15 @@ class EnvironmentManager {
         .replace('#include <fog_fragment>', `#ifdef USE_FOG
           float fogFactor = 1.0 - exp(-fogDensity * fogDensity * fogDepth * fogDepth);
           vec3 gd = normalize(vGp - cameraPosition);
+          fogFactor = max(fogFactor, 1.0 - smoothstep(0.0, 0.07, -gd.y));
           vec3 skyC = texture2D(uSky, vec2(atan(gd.z, gd.x) * 0.15915494 + 0.5, asin(clamp(gd.y, -1.0, 1.0)) * 0.31830989 + 0.5)).rgb;
           gl_FragColor.rgb = mix(gl_FragColor.rgb, skyC, fogFactor);
+          gl_FragColor.a *= 1.0 - smoothstep(900.0, 2300.0, fogDepth);   // the very far ground hands over to the real sky pixels, so no colour step is left where the ground ends
         #endif`);
     };
+    m.transparent = true;                           // alpha only fades the far edge; drawn first among the transparent layers
     m.customProgramCacheKey = () => 'iconic-ground-sky';
-    const mesh = new THREE.Mesh(g, m); mesh.rotation.x = -Math.PI / 2; this.scene.add(mesh);
+    const mesh = new THREE.Mesh(g, m); mesh.rotation.x = -Math.PI / 2; mesh.renderOrder = -10; this.scene.add(mesh);
     this.buildAvenue(); this.buildLamps(); this.buildTraffic();
   }
   /* the avenue: asphalt with lane marks, sidewalks and gold kerb lines, on a repeating canvas texture */
@@ -362,7 +365,7 @@ class EnvironmentManager {
     const T = LOGO.tower, S = TOWER.scale, grp = this.tower = new THREE.Group(); grp.position.set(0, 0, TOWER.z);
     const X = (px) => (px - T.cx) * S, Y = (py) => (T.base - py) * S, V = (q) => new THREE.Vector2(X(q[0]), Y(q[1]));
     const orient = (pts, cw) => (THREE.ShapeUtils.isClockWise(pts) === cw ? pts : pts.slice().reverse());
-    const glass = makeCityMaterial({ color: 0x1c212b, metal: 0.9, rough: 0.18, win: 1.9 * this.cfg.windows }, this.assets);
+    const glass = this.assets.track(new THREE.MeshStandardMaterial({ color: 0x151a24, metalness: 0.88, roughness: 0.22, emissive: 0x120d09, emissiveIntensity: 0.9, fog: false }));   // plain dark glass behind the fins: the landmark has no window pattern
     const gold = this.assets.track(new THREE.MeshStandardMaterial({ color: 0xb48a3e, metalness: 0.72, roughness: 0.36, emissive: 0x7a5820, emissiveIntensity: 0.6, fog: false }));   // the landmark stays gold through the haze
     const add = (geo, mat) => { this.assets.track(geo); const m = new THREE.Mesh(geo, mat); grp.add(m); return m; };
     /* glass volumes (upper tier, main tier, lower step), front faces on z = 0; the upper tier sits 3 units back so overlapping faces never fight */

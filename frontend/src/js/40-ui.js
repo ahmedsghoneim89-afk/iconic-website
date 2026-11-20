@@ -162,20 +162,47 @@ const realProps = () => DATA.properties;
 const shownProps = () => realProps().length ? realProps() : (App.previewOn ? SAMPLE : []);
 const isSample = (p) => SAMPLE.indexOf(p) >= 0;
 
-function renderFilters(list) {
-  const box = $('#filters'); box.textContent = '';
-  const groups = [['type', 'props.filter.type'], ['purpose', 'props.filter.purpose'], ['region', 'props.filter.region']].map(([k, lk]) => [k, lk, [...new Set(list.map((p) => p[k]).filter(Boolean))]]).filter((g) => g[2].length > 1);
-  box.hidden = !groups.length;
-  groups.forEach(([key, lk, vals]) => {
-    const fs = doc.createElement('fieldset'), lg = doc.createElement('legend'), row = doc.createElement('div'); lg.textContent = t(lk); row.className = 'chips';
-    [null, ...vals].forEach((v) => {
-      const b = doc.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = v === null ? t('props.filter.all') : (key === 'region' ? regionName(v) : key === 'type' ? typeLabel(v) : key === 'purpose' ? purposeLabel(v) : v);
-      b.setAttribute('aria-pressed', String(App.filters[key] === v));
-      b.addEventListener('click', () => { App.filters[key] = v; applyFilters(); $$('.chip', row).forEach((c) => c.setAttribute('aria-pressed', String(c === b))); });
-      row.appendChild(b);
-    });
-    fs.append(lg, row); box.appendChild(fs);
-  });
+/* The property search: linked drop-down lists. A governorate offers only its areas, a developer only its projects, and every entry shows how many
+   units are behind it. The server puts the whole tree in the form (data-tree) and applies the same rules to the results page, so both agree. */
+function initFilterForm() {
+  const flt = $('form.flt[data-tree]'); if (!flt) return;
+  let T = null; try { T = JSON.parse(flt.getAttribute('data-tree')); } catch (e) { T = null; }
+  if (!T || !T.r) return;
+  const KEYS = ['d', 'c', 'a', 'p'], ROW = { d: 0, c: 1, a: 2, p: 3 }, SELS = { d: flt.elements.developer, c: flt.elements.city, a: flt.elements.area, p: flt.elements.project };
+  const ORDER = { d: T.d || [], c: T.c || [], a: T.a || [], p: T.p || [] }, NAMES = { d: {}, c: {}, a: {}, p: {} }, AREA_CITY = {};
+  KEYS.forEach((k) => ORDER[k].forEach((x) => { NAMES[k][x[0]] = x[1]; }));
+  ORDER.a.forEach((x) => { AREA_CITY[x[0]] = x[2]; });
+  const cityOrder = ORDER.c.map((x) => x[0]);
+  let nf; try { nf = new Intl.NumberFormat(T.n || undefined); } catch (e) { nf = { format: String }; }
+  const blank = {}; KEYS.forEach((k) => { if (SELS[k]) blank[k] = SELS[k].options[0].text; });
+  const cur = () => { const o = {}; KEYS.forEach((k) => { o[k] = SELS[k] ? SELS[k].value : ''; }); return o; };
+  const keep = (sel, skip) => T.r.filter((r) => KEYS.every((k) => skip.indexOf(k) >= 0 || !sel[k] || r[ROW[k]] === sel[k]));
+  const tally = (list, k) => { const m = new Map(); list.forEach((r) => { const v = r[ROW[k]]; if (v) m.set(v, (m.get(v) || 0) + r[4]); }); return m; };
+  const lists = (sel) => ({ d: tally(keep(sel, 'dp'), 'd'), c: tally(keep(sel, 'cap'), 'c'), a: tally(keep(sel, 'ap'), 'a'), p: tally(keep(sel, 'p'), 'p') });
+  const opt = (v, k, m) => { const o = doc.createElement('option'); o.value = v; o.textContent = NAMES[k][v] + (m.get(v) > 0 ? ' (' + nf.format(m.get(v)) + ')' : ''); return o; };
+  const fill = (k, m, value) => {
+    const s = SELS[k]; if (!s) return;
+    s.textContent = ''; const all = doc.createElement('option'); all.value = ''; all.textContent = blank[k]; s.appendChild(all);
+    if (k === 'a' && !(SELS.c && SELS.c.value)) {
+      cityOrder.forEach((cv) => {
+        const items = ORDER.a.filter((x) => x[2] === cv && m.has(x[0])); if (!items.length) return;
+        const g = doc.createElement('optgroup'); g.label = NAMES.c[cv]; items.forEach((x) => g.appendChild(opt(x[0], 'a', m))); s.appendChild(g);
+      });
+    } else ORDER[k].filter((x) => m.has(x[0])).forEach((x) => s.appendChild(opt(x[0], k, m)));
+    s.value = value; if (s.value !== value) s.value = '';
+  };
+  const refresh = (changed) => {
+    const sel = cur(), row = (p) => T.r.filter((r) => r[3] === p)[0];
+    /* choosing a project or an area fixes where it is */
+    if (changed === 'p' && sel.p) { const r = row(sel.p); if (r) { sel.d = r[0]; sel.c = r[1]; sel.a = r[2]; } }
+    else if (changed === 'a' && sel.a && AREA_CITY[sel.a]) sel.c = AREA_CITY[sel.a];
+    /* a project stands for its own developer, governorate and area: changing one of them (even to "All") lets go of the project */
+    if (changed !== 'p' && ROW[changed] !== undefined && sel.p) { const pr = row(sel.p); if (!pr || pr[ROW[changed]] !== sel[changed]) sel.p = ''; }
+    /* what no longer fits goes back to "All"; the list the person just changed is never touched */
+    ['p', 'a', 'd', 'c'].forEach((k) => { if (k !== changed && sel[k] && !lists(sel)[k].has(sel[k])) sel[k] = ''; });
+    const L2 = lists(sel); KEYS.forEach((k) => fill(k, L2[k], sel[k]));
+  };
+  KEYS.forEach((k) => { if (SELS[k]) SELS[k].addEventListener('change', () => refresh(k)); });
 }
 function applyFilters() {
   const cards = $$('.card'); let n = 0, shown = [];
@@ -193,7 +220,7 @@ function renderProps() {
   cardST.forEach((s) => s.kill()); cardST = []; grid.textContent = '';
   $('#propsEmpty').hidden = hasReal; $('#previewNote').hidden = hasReal || !App.previewOn;
   const pb = $('#previewBtn'); pb.setAttribute('aria-pressed', String(App.previewOn)); pb.textContent = t(App.previewOn ? 'props.preview.off' : 'props.preview');
-  renderFilters(list); renderAgentFilter();
+  renderAgentFilter();
   list.forEach((p) => {
     const c = doc.createElement('article'); c.className = 'card'; c._prop = p;
     const m = doc.createElement('div'); m.className = 'card__media'; m.appendChild(mediaFor(p, 'media-in'));
@@ -350,9 +377,10 @@ function initTeams() {
   Emblem.build($('#teamsArt'), 'static');
   $('#teamsPreviewBtn').addEventListener('click', () => { App.teamsPreview = !App.teamsPreview; App.teamRegion = null; renderTeams(); if (hasGSAP()) ScrollTrigger.refresh(); });
 }
+/* the bar over the units says what narrows them (an agent from the sales teams, or a region from the skyline) and lets the visitor lift it */
 function renderAgentFilter() {
-  const box = $('#agentFilter'), a = App.filters.agent ? findAgent(App.filters.agent) : null;
-  box.hidden = !a; if (a) $('#agentFilterText').textContent = t('props.agentfilter', { name: L(a.name) });
+  const box = $('#agentFilter'), f = App.filters, a = f.agent ? findAgent(f.agent) : null, rg = !a && f.region ? regionName(f.region) : '';
+  box.hidden = !a && !rg; if (a) $('#agentFilterText').textContent = t('props.agentfilter', { name: L(a.name) }); else if (rg) $('#agentFilterText').textContent = t('props.regionfilter', { name: rg });
 }
 function showAgentUnits(a) {
   if (App.introRunning) Intro.skip();
@@ -416,7 +444,8 @@ function initDetail() {
     }
   });
   $('#previewBtn').addEventListener('click', () => { App.previewOn = !App.previewOn; App.filters = { type: null, purpose: null, region: null, agent: null }; renderProps(); if (hasGSAP()) ScrollTrigger.refresh(); });
-  $('#agentFilterClear').addEventListener('click', () => { App.filters.agent = null; renderProps(); if (hasGSAP()) ScrollTrigger.refresh(); });
+  $('#agentFilterClear').addEventListener('click', () => { App.filters.agent = null; App.filters.region = null; renderProps(); if (hasGSAP()) ScrollTrigger.refresh(); });
+  initFilterForm();
 }
 
 /* ---------- Scene 07: conversion ---------- */

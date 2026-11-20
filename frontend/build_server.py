@@ -61,7 +61,6 @@ put('<div class="contact-info" id="contactInfo"></div>', '<div class="contact-in
 put('<div class="wrap cbranches" id="contactBranches"></div>', '<div class="wrap cbranches" id="contactBranches"><!--SSR:branches--></div>')
 put('<p class="note" id="propsCount" aria-live="polite"></p>', '<p class="note" id="propsCount" aria-live="polite"><!--SSR:count--></p>')
 put('<span id="year"></span>', '<span id="year"><!--SSR:year--></span>')
-put('data-i18n="props.lede">Approved listings appear here, with filters that come from the listing data.</p>', 'data-i18n="props.lede">Approved listings appear here, with filters that come from the listing data.</p>\n        <!--SSR:regions-->')
 # server mode: the preview buttons only make sense in the prototype
 put('<button class="btn" id="previewBtn"', '<button class="btn" id="previewBtn" hidden')
 put('<button class="btn" id="teamsPreviewBtn"', '<button class="btn" id="teamsPreviewBtn" hidden')
