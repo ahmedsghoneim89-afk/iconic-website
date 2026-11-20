@@ -35,7 +35,7 @@ function make(lang, snap) {
   const layout = { teams: !(raw.layout && raw.layout.teams === false), about: !(raw.layout && raw.layout.about === false) };
   const regionSeo = (id) => { const r = (raw.regions && raw.regions[id]) || {}; return { title: L(r.title), description: L(r.description), intro: L(r.intro) }; };
 
-  const agents = raw.agents.map((a) => ({ id: a.id, team: a.team, name: L(a.name), role: L(a.role), photo: imgPath(a.photo), phone: a.phone || '', whatsapp: a.whatsapp || '', email: a.email || '' }));
+  const agents = raw.agents.map((a) => ({ id: a.id, team: a.team, name: L(a.name), role: L(a.role), manager: a.manager === true, order: a.order == null ? 100 : a.order, photo: imgPath(a.photo), phone: a.phone || '', whatsapp: a.whatsapp || '', email: a.email || '' }));
   const agentById = new Map(agents.map((a) => [a.id, a]));
   const regionRank = (id) => { const i = REGIONS.findIndex((r) => r.id === id); return i < 0 ? 99 : i; };
   /* a team serves one or more regions; documents saved before that only carry `region` */

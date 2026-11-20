@@ -23,6 +23,7 @@ const num = (min, max) => (v) => {
 const httpsUrl = (max = 500) => (v) => { const s = S(max)(v); if (s && !/^https:\/\/[^\s<>"']+$/i.test(s)) fail('https link expected'); return s; };
 const oneOf = (list, blank) => (v) => { const s = S(80)(v); if (!s && blank) return ''; if (!list.includes(s)) fail('unknown option'); return s; };
 const bool = (v) => v !== false;
+const flag = (v) => v === true;
 const email = (v) => { const s = S(120)(v); if (s && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) fail('email expected'); return s; };
 const img = (v) => {
   if (v == null || v === '') return null;
@@ -96,7 +97,7 @@ const COLLECTIONS = {
     o.regions = REGION_IDS.filter((r) => set.has(r)); o.region = o.regions[0];
     if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o;
   },
-  agents: (v) => { const o = obj({ team: S(80), name: bi(120), role: bi(120), photo: img, whatsapp: S(30), phone: S(30), email, order: num(-9999, 9999) })(v); if (!o.team) fail('team required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
+  agents: (v) => { const o = obj({ team: S(80), name: bi(120), role: bi(120), manager: flag, photo: img, whatsapp: S(30), phone: S(30), email, order: num(-9999, 9999) })(v); if (!o.team) fail('team required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
   properties: (v) => {
     const o = obj({ title: bi(160), project: bi(160), projectId: oid, location: bi(200), description: bi(4000), seoTitle: bi(120), seoDescription: bi(320), region: oneOf(REGION_IDS), type: oneOf(require('./lists').ids('types')), purpose: oneOf(require('./lists').ids('purposes')), agent: S(80), price: num(0, 1e12), currency: oneOf(CURRENCIES, true), beds: num(0, 99), baths: num(0, 99), area: num(0, 1e6), images: arr(img, 30), order: num(-9999, 9999) })(v);
     if (!(o.title && (o.title.en || o.title.ar))) fail('title required'); if (!o.region || !o.type || !o.purpose) fail('region, type and purpose required'); return o;

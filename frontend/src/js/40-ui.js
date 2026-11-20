@@ -318,6 +318,12 @@ function observeReveal(els) {
   revealIO = revealIO || new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('is-in'); revealIO.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
   els.forEach((e) => revealIO.observe(e));
 }
+/* a team opens with its managers; the rest sit behind a button. No manager marked: the first few (everyone when the team is small). Same rule as the server. */
+function teamSplit(list) {
+  const lead = list.filter((a) => a.manager);
+  if (lead.length) return { lead, rest: list.filter((a) => !a.manager) };
+  return list.length <= 4 ? { lead: list, rest: [] } : { lead: list.slice(0, 3), rest: list.slice(3) };
+}
 function drawTeams() {
   const set = teamSet(), list = $('#teamsList'); list.textContent = ''; if (!set) return;
   const teams = set.teams.slice().sort((x, y) => regionRank(x.region) - regionRank(y.region)).filter((tm) => !App.teamRegion || teamRegions(tm).includes(App.teamRegion));
@@ -329,9 +335,22 @@ function drawTeams() {
     const meta = doc.createElement('p'); meta.className = 'team__meta';
     [regionsLabel(teamRegions(tm)), plural('team.agents', agents.length), plural('team.units', units)].filter(Boolean).forEach((x) => { const sp = doc.createElement('span'); sp.textContent = x; meta.appendChild(sp); });
     head.append(h, meta);
+    const { lead, rest } = teamSplit(agents);
     const grid = doc.createElement('div'); grid.className = 'team__agents';
-    agents.forEach((a, i) => grid.appendChild(agentCard(a, set.sample, i)));
-    sec.append(head, grid); list.appendChild(sec);
+    lead.forEach((a, i) => grid.appendChild(agentCard(a, set.sample, i)));
+    sec.append(head, grid);
+    if (rest.length) {
+      const det = doc.createElement('details'); det.className = 'team__more';
+      const sum = doc.createElement('summary'); sum.className = 'btn btn--small team__toggle';
+      const s1 = doc.createElement('span'); s1.className = 'team__show'; s1.textContent = t('team.showAll', { n: fmtNum(agents.length) });
+      const s2 = doc.createElement('span'); s2.className = 'team__hide'; s2.textContent = t('team.hideAll');
+      sum.append(s1, s2);
+      const more = doc.createElement('div'); more.className = 'team__agents team__agents--rest';
+      rest.forEach((a, i) => more.appendChild(agentCard(a, set.sample, i)));
+      det.append(sum, more); det.addEventListener('toggle', () => { if (hasGSAP()) ScrollTrigger.refresh(); });
+      sec.appendChild(det);
+    }
+    list.appendChild(sec);
   });
   observeReveal($$('.agent', list));
   stageAgents(list);
@@ -341,7 +360,7 @@ function drawTeams() {
 function stageAgents(list) {
   agentST.forEach((s) => s.kill()); agentST = [];
   if (!hasGSAP() || App.reduced) return;
-  const frames = $$('.agent__photo:not(.is-ph)', list).filter((f) => f.querySelector('img')); if (!frames.length) return;
+  const frames = $$('.agent__photo:not(.is-ph)', list).filter((f) => f.querySelector('img') && !f.closest('.team__agents--rest')); if (!frames.length) return;
   gsap.set(frames, { clipPath: 'inset(100% 0% 0% 0%)' });
   agentST.push(...ScrollTrigger.batch(frames, { start: 'top 92%', once: true, onEnter: (batch) => gsap.to(batch, { clipPath: 'inset(0% 0% 0% 0%)', duration: MOTION.duration.slow, ease: MOTION.ease.inOut, stagger: MOTION.stagger.base, clearProps: 'clipPath', overwrite: 'auto' }) }));
   frames.forEach((f) => {

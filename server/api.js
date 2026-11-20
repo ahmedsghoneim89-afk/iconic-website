@@ -8,6 +8,7 @@ const content = require('./content');
 const applications = require('./applications');
 const sell = require('./sell');
 const mailer = require('./mailer');
+const agentsImport = require('./agents_import');
 const catalog = require('./catalog');
 const catalogAdmin = require('./catalog_admin');
 const { readJson, readBody, sha } = require('./util');
@@ -144,6 +145,12 @@ async function handle(req, res, url) {
     return json(res, 200, { ok: true });
   }
   if (p === '/assets' && m === 'POST') { need(s, CONTENT_WRITERS); return upload(req, res); }
+  /* many sales agents at once from an Excel or CSV file: ?apply=1 saves, without it the file is only checked */
+  if (p === '/agents-import' && m === 'POST') {
+    need(s, CONTENT_WRITERS);
+    const file = await readBody(req, 5 * 1024 * 1024);
+    return json(res, 200, agentsImport[url.searchParams.get('apply') === '1' ? 'apply' : 'preview'](file));
+  }
 
   /* ---- people who can sign in (admin only) ---- */
   if (seg[0] === 'users') {

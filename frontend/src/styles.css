@@ -275,6 +275,15 @@ html[lang="ar"] .team__head h3{font-weight:700;line-height:1.25}
 .team__meta{display:flex;flex-wrap:wrap;gap:.25rem var(--s-5);color:var(--c-ivory-300);font-size:.92rem}
 .team__meta span:first-child{color:var(--c-gold-300)}
 .team__agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:var(--s-7) var(--s-6)}
+.team__more{display:grid;gap:var(--s-6)}
+.team__toggle{justify-self:start;cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:.6rem;user-select:none}
+.team__toggle::-webkit-details-marker{display:none}
+.team__toggle::after{content:"";width:.5rem;height:.5rem;border-inline-end:1.5px solid currentColor;border-block-end:1.5px solid currentColor;transform:translateY(-.12rem) rotate(45deg);transition:transform var(--dur-fast)}
+.team__more[open] .team__toggle::after{transform:translateY(.1rem) rotate(-135deg)}
+.team__hide,.team__more[open] .team__show{display:none}
+.team__more[open] .team__hide{display:inline}
+.team__toggle:focus-visible{outline:2px solid var(--c-gold-300);outline-offset:3px}
+.team__agents--rest{padding-block-start:var(--s-3)}
 .agent{display:grid;gap:var(--s-4);align-content:start;transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out);transition-delay:calc(var(--i,0) * 70ms)}
 html.motion-ready:not(.reduced) .agent:not(.is-in){opacity:0;transform:translateY(22px)}
 .agent__photo{--lit:.35;position:relative;aspect-ratio:4/5;overflow:hidden;background:linear-gradient(to bottom,#1b1b24,#0b0b0f);border:var(--b-soft)}
@@ -600,6 +609,37 @@ details.adm__place[open]>.adm__sum{margin-bottom:var(--s-3)}
 .adm__modal{position:absolute;inset:0;z-index:2;background:rgba(5,5,7,.78);display:grid;place-items:center;padding:1rem}
 .adm__modalbox{max-width:26rem;width:100%;padding:var(--s-5);border:var(--b-hair);border-radius:var(--r-1);background:var(--c-obsidian-800);display:grid;gap:var(--s-4)}
 .adm__modalbox p{margin:0}
+/* dashboard: agents list and the Excel upload */
+.adm__badges{display:flex;flex-wrap:wrap;gap:.35rem}
+.adm__badges .adm__badge{margin-top:.3rem}
+.adm__headacts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-3)}
+.adm__pager{display:flex;align-items:center;justify-content:center;gap:var(--s-4);margin-top:var(--s-5)}
+.adm__pager .btn:disabled{opacity:.4;cursor:not-allowed}
+.adm__count{margin:0 0 var(--s-3)}
+.adm__filters .ai--inline[type=search]{flex:2 1 18rem;min-width:12rem}
+.af__check .af__h{display:block}
+.ai{display:grid;gap:var(--s-5);max-width:52rem}
+.ai__help{display:grid;gap:var(--s-3)}
+.ai__ul{margin:0;padding-inline-start:1.3rem;display:grid;gap:.4rem;color:var(--c-ivory-300);list-style:disc}
+.ai__chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:0;padding:0;list-style:none}
+.ai__chip{padding:.2rem .8rem;border:1px solid var(--c-line);border-radius:var(--r-pill);font-size:.88rem;color:var(--c-gold-300)}
+.ai__tools{display:flex;flex-wrap:wrap;gap:var(--s-3);align-items:center}
+.ai__file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.ai__err{margin:0}
+.ai__prev{display:grid;gap:var(--s-3)}
+.ai__file-name{margin:0;color:var(--c-ivory-500);overflow-wrap:anywhere}
+.ai__sum{margin:0;font-size:1.1rem;color:var(--c-gold-300)}
+.ai__rows{margin:0;padding:0;list-style:none;display:grid;max-height:24rem;overflow:auto;border:1px solid var(--c-line-soft);border-radius:var(--r-1)}
+.ai__row{display:grid;grid-template-columns:5rem minmax(0,1.4fr) minmax(0,1fr) 5.5rem;gap:.2rem var(--s-3);align-items:baseline;padding:.55rem .8rem;border-block-end:1px solid rgba(255,255,255,.06)}
+.ai__row:last-child{border-block-end:0}
+.ai__n{color:var(--c-ivory-500);font-size:.85rem}
+.ai__row .note{margin:0;overflow-wrap:anywhere}
+.ai__st{justify-self:end;font-size:.8rem;padding:.05rem .6rem;border-radius:var(--r-pill);border:1px solid var(--c-line-soft);color:var(--c-ivory-300)}
+.ai__row[data-state=create] .ai__st{border-color:var(--c-line);color:var(--c-gold-300)}
+.ai__row[data-state=bad]{background:rgba(240,160,146,.07)}
+.ai__row[data-state=bad] .ai__st{border-color:rgba(240,160,146,.45);color:var(--c-error)}
+.ai__why{grid-column:2/-1;color:var(--c-error);font-size:.88rem}
+@media (max-width:640px){.ai__row{grid-template-columns:minmax(0,1fr) auto}.ai__n{grid-column:1/-1}.ai__row .note{grid-column:1}.ai__why{grid-column:1/-1}}
 /* dashboard: company email */
 .em{max-width:46rem;gap:var(--s-5)}
 .em__card{justify-items:stretch;gap:var(--s-4)}

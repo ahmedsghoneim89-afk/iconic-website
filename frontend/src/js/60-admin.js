@@ -299,21 +299,46 @@ function teamForm(id) {
 const backHead = (title) => h('header', { class: 'adm__head' }, h('div', null, h('button', { type: 'button', class: 'adm__link', onclick: () => { AS.form = null; drawAdmin(); }, text: '‹ ' + ta('back') }), h('h2', { text: title })));
 
 /* ----- agents ----- */
+/* the agents list: search, filters and pages, so a few hundred people stay easy to work with */
+const AG = { q: '', kind: '', miss: '', page: 1 }, AG_PAGE = 24;
+const agNorm = (v) => String(v == null ? '' : v).toLowerCase().replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
 function viewAgents() {
   if (AS.form && AS.form.kind === 'agent') return agentForm(AS.form.id);
-  const R = Store.raw, tf = AS.filters.team;
-  const teamOpts = h('select', { class: 'ai ai--inline', 'aria-label': ta('ag.team'), onchange: (e) => { AS.filters.team = e.target.value; drawAdmin(); } }, h('option', { value: '', text: ta('ag.allTeams') }), R.teams.map((tm) => h('option', { value: tm.id, text: nameOf(tm.name) })));
-  teamOpts.value = tf;
-  const list = R.agents.filter((a) => !tf || a.team === tf).sort((a, b) => orderOf(a) - orderOf(b));
-  const cards = list.map((a) => {
-    const tm = rawOf('teams', a.team), n = unitsOfAgentId(a.id).length, u = refUrl(a.photo);
-    return h('article', { class: 'adm__agent' }, h('div', { class: 'adm__thumb' }, u ? h('img', { src: u, alt: '' }) : silhouette()),
+  if (AS.form && AS.form.kind === 'agent-import') return viewAgentsImport();
+  const R = Store.raw, tf = AS.filters.team, redo = () => { AG.page = 1; drawAdmin(); };
+  const sel = (label, value, opts, set) => { const e = h('select', { class: 'ai ai--inline', 'aria-label': label, onchange: (ev) => { set(ev.target.value); redo(); } }, opts.map(([v, l]) => h('option', { value: v, text: l }))); e.value = value; return e; };
+  const teamOpts = sel(ta('ag.team'), tf, [['', ta('ag.allTeams')]].concat(R.teams.map((tm) => [tm.id, nameOf(tm.name)])), (v) => { AS.filters.team = v; });
+  const kindOpts = sel(ta('ag.kind'), AG.kind, [['', ta('ag.kindAll')], ['mgr', ta('ag.kindMgr')], ['staff', ta('ag.kindStaff')]], (v) => { AG.kind = v; });
+  const missOpts = sel(ta('ag.miss'), AG.miss, [['', ta('ag.missAny')], ['photo', ta('ag.missPhoto')], ['wa', ta('ag.noWa')], ['units', ta('ag.missUnits')]], (v) => { AG.miss = v; });
+  const q = h('input', { class: 'ai ai--inline', type: 'search', placeholder: ta('ag.search'), 'aria-label': ta('ag.search'), value: AG.q, oninput: (e) => { AG.q = e.target.value; clearTimeout(q._t); q._t = setTimeout(() => { AG.page = 1; drawAdmin(); const n = $('input[type=search]', admBody); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); } });
+  const unitCount = new Map(); R.properties.forEach((p) => { if (p.agent) unitCount.set(p.agent, (unitCount.get(p.agent) || 0) + 1); });
+  const needle = agNorm(AG.q.trim()), digits = needle.replace(/\D/g, '');
+  const hit = (a) => {
+    if (!needle) return true;
+    const tm = rawOf('teams', a.team), hay = agNorm([nameOf(a.name), a.name && a.name.en, a.name && a.name.ar, a.role && a.role.en, a.role && a.role.ar, a.email, tm ? nameOf(tm.name) : ''].join(' '));
+    return hay.includes(needle) || (digits.length >= 3 && [a.whatsapp, a.phone].some((x) => String(x || '').replace(/\D/g, '').includes(digits)));
+  };
+  const list = R.agents.filter((a) => (!tf || a.team === tf) && (AG.kind !== 'mgr' || a.manager === true) && (AG.kind !== 'staff' || a.manager !== true)
+    && (AG.miss !== 'photo' || !a.photo) && (AG.miss !== 'wa' || !waNumber(a.whatsapp)) && (AG.miss !== 'units' || !unitCount.get(a.id)) && hit(a)).sort((a, b) => orderOf(a) - orderOf(b));
+  const pages = Math.max(1, Math.ceil(list.length / AG_PAGE)); if (AG.page > pages) AG.page = pages;
+  const from = (AG.page - 1) * AG_PAGE, shown = list.slice(from, from + AG_PAGE);
+  const cards = shown.map((a) => {
+    const tm = rawOf('teams', a.team), n = unitCount.get(a.id) || 0, u = refUrl(a.photo);
+    return h('article', { class: 'adm__agent' }, h('div', { class: 'adm__thumb' }, u ? h('img', { src: u, alt: '', loading: 'lazy' }) : silhouette()),
       h('div', { class: 'adm__agent-main' }, h('strong', { text: nameOf(a.name) }), h('span', { class: 'note', text: L(a.role) }), h('span', { class: 'note', text: [tm ? nameOf(tm.name) : '', ta('ag.units', { n: fmtNum(n) })].filter(Boolean).join(' | ') }),
-        h('span', { class: 'adm__badge', 'data-ok': waNumber(a.whatsapp) ? '1' : '', text: waNumber(a.whatsapp) ? 'WhatsApp ✓' : ta('ag.noWa') })),
+        h('span', { class: 'adm__badges' }, a.manager ? h('span', { class: 'adm__badge', 'data-ok': '1', text: ta('ag.mgrBadge') }) : null, h('span', { class: 'adm__badge', 'data-ok': waNumber(a.whatsapp) ? '1' : '', text: waNumber(a.whatsapp) ? 'WhatsApp ✓' : ta('ag.noWa') }))),
       h('button', { type: 'button', class: 'btn btn--small', onclick: () => { AS.form = { kind: 'agent', id: a.id }; drawAdmin(); }, text: ta('f.edit') }));
   });
-  return h('div', null, sectionHead(ta('ag.title'), ta('ag.lead'), R.teams.length ? addBtn(ta('ag.add'), () => { AS.form = { kind: 'agent', id: null }; drawAdmin(); }) : null),
-    !R.teams.length ? h('p', { class: 'adm__empty', text: ta('ag.needTeam') }) : [h('div', { class: 'adm__filters' }, teamOpts), cards.length ? h('div', { class: 'adm__cards' }, cards) : h('p', { class: 'adm__empty', text: ta('ag.empty') })]);
+  const pager = pages > 1 ? h('nav', { class: 'adm__pager', 'aria-label': ta('ag.pages') },
+    h('button', { type: 'button', class: 'btn btn--small', disabled: AG.page <= 1, onclick: () => { AG.page--; drawAdmin(); }, text: ta('ag.prev') }),
+    h('span', { class: 'note', text: ta('ag.page', { p: fmtNum(AG.page), n: fmtNum(pages) }) }),
+    h('button', { type: 'button', class: 'btn btn--small', disabled: AG.page >= pages, onclick: () => { AG.page++; drawAdmin(); }, text: ta('ag.next') })) : null;
+  const filtered = !!(needle || tf || AG.kind || AG.miss);
+  const actions = R.teams.length ? h('div', { class: 'adm__headacts' }, h('button', { type: 'button', class: 'btn btn--small', onclick: () => { AS.form = { kind: 'agent-import', fresh: true }; drawAdmin(); }, text: ta('ag.import') }), addBtn(ta('ag.add'), () => { AS.form = { kind: 'agent', id: null }; drawAdmin(); })) : null;
+  return h('div', null, sectionHead(ta('ag.title'), ta('ag.lead'), actions),
+    !R.teams.length ? h('p', { class: 'adm__empty', text: ta('ag.needTeam') }) : [h('div', { class: 'adm__filters' }, q, teamOpts, kindOpts, missOpts),
+      R.agents.length ? h('p', { class: 'note adm__count', role: 'status', text: filtered ? ta('ag.countOf', { n: fmtNum(list.length), all: fmtNum(R.agents.length) }) : ta('ag.countAll', { n: fmtNum(R.agents.length) }) }) : null,
+      cards.length ? h('div', { class: 'adm__cards' }, cards) : h('p', { class: 'adm__empty', text: R.agents.length ? ta('ag.noMatch') : ta('ag.empty') }), pager]);
 }
 function agentForm(id) {
   const r = id ? rawOf('agents', id) : null, ph = { v: r ? r.photo || null : null };
@@ -323,7 +348,9 @@ function agentForm(id) {
   } : null;
   const f = formShell('', [
     fieldWrap(ta('ag.team'), select('team', Store.raw.teams.map((tm) => [tm.id, nameOf(tm.name) + ' — ' + regionsLabel(teamRegions(tm))]), r ? r.team : (AS.filters.team || ''), { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'team' })),
-    bil('name', ta('ag.name'), r && r.name, false), bil('role', ta('ag.role'), r && r.role, false), photoField(ph, ta('ag.photo')),
+    bil('name', ta('ag.name'), r && r.name, false), bil('role', ta('ag.role'), r && r.role, false),
+    h('label', { class: 'af__check' }, h('input', { type: 'checkbox', name: 'manager', checked: !!(r && r.manager) }), h('span', null, ta('ag.manager'), h('small', { class: 'af__h', text: ta('ag.managerHint') }))),
+    photoField(ph, ta('ag.photo')),
     fieldWrap(ta('ag.wa'), input('whatsapp', r && r.whatsapp, { type: 'tel', dir: 'ltr', im: 'tel' }), ta('ag.waHint'), h('p', { class: 'af__e', 'data-err': 'whatsapp' })),
     fieldWrap(ta('ag.phone'), input('phone', r && r.phone, { type: 'tel', dir: 'ltr', im: 'tel' }), null, h('p', { class: 'af__e', 'data-err': 'phone' })),
     fieldWrap(ta('ag.email'), input('email', r && r.email, { type: 'email', dir: 'ltr' }), null, h('p', { class: 'af__e', 'data-err': 'email' })),
@@ -335,7 +362,7 @@ function agentForm(id) {
       const wa = waNumber(v('whatsapp')); bad = setErr(f, 'whatsapp', v('whatsapp') && !(wa.length >= 8 && wa.length <= 15) ? ta('f.badWa') : '') || bad;
       bad = setErr(f, 'phone', v('phone') && v('phone').replace(/\D/g, '').length < 7 ? ta('f.badPhone') : '') || bad;
       bad = setErr(f, 'email', v('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email')) ? ta('f.badEmail') : '') || bad;
-      return bad ? null : { team: v('team'), name, role: readBil(f, 'role'), photo: ph.v || null, whatsapp: v('whatsapp'), phone: v('phone'), email: v('email'), order: numOrNull(f.elements.order.value) };
+      return bad ? null : { team: v('team'), name, role: readBil(f, 'role'), manager: f.elements.manager.checked, photo: ph.v || null, whatsapp: v('whatsapp'), phone: v('phone'), email: v('email'), order: numOrNull(f.elements.order.value) };
     },
     write: async (d) => { await dbSet('agents', id || newId('a'), d); AS.form = null; drawAdmin(); }
   }, () => { AS.form = null; drawAdmin(); }, del);

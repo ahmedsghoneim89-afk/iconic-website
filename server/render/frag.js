@@ -32,12 +32,21 @@ function agentCard(c, a, i) {
   const n = c.props.filter((p) => p.agent === a.id).length;
   return `<article class="agent" style="--i:${i % 4}"><div class="agent__photo${a.photo ? '' : ' is-ph'}">${agentPhoto(c, a)}</div><div class="agent__body"><h4 class="agent__name">${esc(a.name)}</h4><p class="agent__role">${esc(a.role)}</p><p class="agent__units">${n ? `<span>${esc(c.plural('team.units', n))}</span>` : esc(c.t('agent.units.none'))}</p><div class="agent__actions">${agentActions(c, a, null)}</div></div></article>`;
 }
+/* A team opens with its managers; the rest of the team sits behind a button. A team with no manager marked shows its first few people (all of them when it is small). */
+const TEAM_LEAD_FALLBACK = 3, TEAM_SMALL = 4;
+function teamSplit(list) {
+  const lead = list.filter((a) => a.manager);
+  if (lead.length) return { lead, rest: list.filter((a) => !a.manager) };
+  return list.length <= TEAM_SMALL ? { lead: list, rest: [] } : { lead: list.slice(0, TEAM_LEAD_FALLBACK), rest: list.slice(TEAM_LEAD_FALLBACK) };
+}
 function teams(c, only) {
   if (!c.layout.teams && !only) return '';
   return c.teams.slice().sort((x, y) => c.regionRank(x.region) - c.regionRank(y.region)).filter((tm) => !only || tm.regions.includes(only)).map((tm) => {
     const ag = c.agents.filter((a) => a.team === tm.id), units = ag.reduce((n, a) => n + c.props.filter((p) => p.agent === a.id).length, 0);
     const meta = [c.regionsLabel(tm.regions), c.plural('team.agents', ag.length), c.plural('team.units', units)].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('');
-    return `<section class="team" data-region="${esc(tm.regions.join(' '))}" id="team-${esc(tm.id)}" aria-labelledby="team-${esc(tm.id)}-t"><header class="team__head"><h3 id="team-${esc(tm.id)}-t">${esc(tm.name)}</h3><p class="team__meta">${meta}</p></header><div class="team__agents">${ag.map((a, i) => agentCard(c, a, i)).join('')}</div></section>`;
+    const { lead, rest } = teamSplit(ag);
+    const more = rest.length ? `<details class="team__more"><summary class="btn btn--small team__toggle"><span class="team__show">${esc(c.t('team.showAll', { n: c.fmtNum(ag.length) }))}</span><span class="team__hide">${esc(c.t('team.hideAll'))}</span></summary><div class="team__agents team__agents--rest">${rest.map((a, i) => agentCard(c, a, i)).join('')}</div></details>` : '';
+    return `<section class="team" data-region="${esc(tm.regions.join(' '))}" id="team-${esc(tm.id)}" aria-labelledby="team-${esc(tm.id)}-t"><header class="team__head"><h3 id="team-${esc(tm.id)}-t">${esc(tm.name)}</h3><p class="team__meta">${meta}</p></header><div class="team__agents">${lead.map((a, i) => agentCard(c, a, i)).join('')}</div>${more}</section>`;
   }).join('');
 }
 function pillars(c) {
