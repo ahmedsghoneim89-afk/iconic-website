@@ -26,7 +26,7 @@ const BOT = /bot|crawl|spider|slurp|lighthouse|pagespeed|headless|facebookextern
 
 /* ---- headers ---- */
 function baseHeaders() {
-  const h = { 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'DENY', 'Cross-Origin-Opener-Policy': 'same-origin' };
+  const h = { 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'DENY', 'Cross-Origin-Opener-Policy': 'same-origin', 'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' };
   if (cfg.secure) h['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
   return h;
 }
@@ -55,19 +55,33 @@ function pickLang(req) {
   return cfg.defaultLang;
 }
 
-/* ---- page cache: one entry per page, dropped whenever content changes ---- */
-const cache = new Map(); let cacheV = -1;
+/* ---- page cache: one entry per page, dropped whenever content changes. Once it is full the least recently used pages go first,
+   so a flood of one-off addresses (every price filter is a new address) cannot push the popular pages out or eat the memory. ---- */
+const cache = new Map(); let cacheV = -1, cacheBytes = 0;
+const CACHE_MAX_BYTES = 160 * 1024 * 1024, CACHE_MAX_ENTRIES = 1500;
 function cached(key, build) {
-  if (cacheV !== store.version) { cache.clear(); cacheV = store.version; }
+  if (cacheV !== store.version) { cache.clear(); cacheBytes = 0; cacheV = store.version; }
   let e = cache.get(key);
-  if (!e) { const r = build(); e = { html: r.html, status: r.status || 200, csp: csp(r.inline || []), etag: '"' + sha(r.html, 20) + '"' }; if (cache.size > 800) cache.clear(); cache.set(key, e); }
+  if (e) { cache.delete(key); cache.set(key, e); return e; }   // used just now: move to the back of the queue
+  const r = build(), buf = Buffer.from(r.html);
+  e = { buf, status: r.status || 200, csp: csp(r.inline || []), etag: '"' + sha(buf, 20) + '"', size: buf.length };
+  cache.set(key, e); cacheBytes += e.size;
+  while ((cacheBytes > CACHE_MAX_BYTES || cache.size > CACHE_MAX_ENTRIES) && cache.size > 1) { const k = cache.keys().next().value; cacheBytes -= cache.get(k).size; cache.delete(k); }
   return e;
 }
 const fkey = (f) => [f.developer, f.project, f.area, f.city].map((x) => (x ? x.id : '')).concat([f.type || '', f.purpose || '', f.beds || '', f.baths || '', f.priceMin || '', f.priceMax || '', f.areaMin || '', f.areaMax || '', f.currency || '', f.sort || '']).join('-');
-const ctxFor = (lang) => Ctx.make(lang, content.snapshot());
+/* what the pages are drawn from is the same for every visitor until content changes (or the day turns, for job closing dates): build it once per language */
+const ctxMemo = new Map(); let ctxV = -1, ctxDay = '';
+function ctxFor(lang) {
+  const day = new Date().toISOString().slice(0, 10);
+  if (ctxV !== store.version || ctxDay !== day) { ctxMemo.clear(); ctxV = store.version; ctxDay = day; }
+  let c = ctxMemo.get(lang);
+  if (!c) { c = Ctx.make(lang, content.snapshot()); ctxMemo.set(lang, c); }
+  return c;
+}
 function sendPage(req, res, e) {
   if (req.headers['if-none-match'] === e.etag && e.status === 200) { res.writeHead(304, Object.assign(baseHeaders(), { ETag: e.etag, 'Cache-Control': 'no-cache' })); return res.end(); }
-  send(req, res, e.status, e.html, 'text/html; charset=utf-8', { ETag: e.etag, 'Content-Security-Policy': e.csp, 'Cache-Control': e.status === 200 ? 'no-cache' : 'no-store' });
+  send(req, res, e.status, e.buf, 'text/html; charset=utf-8', { ETag: e.etag, 'Content-Security-Policy': e.csp, 'Cache-Control': e.status === 200 ? 'no-cache' : 'no-store' });
 }
 
 /* ---- static files ---- */
@@ -109,7 +123,7 @@ async function route(req, res) {
   if (p === '/robots.txt') return send(req, res, 200, SEO.robots(), 'text/plain; charset=utf-8', { 'Cache-Control': 'public, max-age=3600' });
   if (p === '/sitemap.xml') {
     const e = cached('sitemap', () => ({ html: SEO.sitemap(ctxFor) }));
-    return send(req, res, 200, e.html, 'application/xml; charset=utf-8', { ETag: e.etag, 'Cache-Control': 'public, max-age=900' });
+    return send(req, res, 200, e.buf, 'application/xml; charset=utf-8', { ETag: e.etag, 'Cache-Control': 'public, max-age=900' });
   }
   if (p === '/site.webmanifest') { const l = url.searchParams.get('lang') === 'en' ? 'en' : 'ar'; return send(req, res, 200, JSON.stringify(SEO.manifest(l)), 'application/manifest+json; charset=utf-8', { 'Cache-Control': 'public, max-age=86400' }); }
 

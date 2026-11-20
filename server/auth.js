@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const net = require('node:net');
 const cfg = require('./config');
 const { db } = require('./db');
 const { parseCookies, sha } = require('./util');
@@ -19,8 +20,14 @@ function getSecret() {
 }
 const hashIp = (ip) => crypto.createHmac('sha256', getSecret()).update(String(ip)).digest('hex').slice(0, 20);
 
+/* The visitor's address. Behind our own proxy the X-Forwarded-For list ends with the address the proxy saw; everything to the left of it
+   was written by the visitor and can be made up, so counting from the right is the only safe way. A value that is not an address is ignored. */
 function clientIp(req) {
-  if (cfg.trustProxy) { const x = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim(); if (x) return x; }
+  if (cfg.trustProxy) {
+    const parts = String(req.headers['x-forwarded-for'] || '').split(',').map((x) => x.trim()).filter(Boolean);
+    const hop = parts[parts.length - cfg.proxyHops];
+    if (hop && net.isIP(hop)) return hop;
+  }
   return req.socket.remoteAddress || '0.0.0.0';
 }
 
@@ -34,6 +41,15 @@ function checkPassword(pw, stored) {
   const [kind, saltHex, keyHex] = String(stored).split('$');
   if (kind !== 'scrypt' || !saltHex || !keyHex) return false;
   const key = crypto.scryptSync(pw, Buffer.from(saltHex, 'hex'), 64, { N: 16384, r: 8, p: 1 });
+  const want = Buffer.from(keyHex, 'hex');
+  return key.length === want.length && crypto.timingSafeEqual(key, want);
+}
+/* the same check without freezing the site: the work runs on a worker thread while other visitors are served */
+const scryptAsync = (pw, salt) => new Promise((resolve, reject) => crypto.scrypt(pw, salt, 64, { N: 16384, r: 8, p: 1 }, (e, k) => (e ? reject(e) : resolve(k))));
+async function checkPasswordAsync(pw, stored) {
+  const [kind, saltHex, keyHex] = String(stored).split('$');
+  if (kind !== 'scrypt' || !saltHex || !keyHex) return false;
+  const key = await scryptAsync(pw, Buffer.from(saltHex, 'hex'));
   const want = Buffer.from(keyHex, 'hex');
   return key.length === want.length && crypto.timingSafeEqual(key, want);
 }
@@ -115,12 +131,17 @@ function locked(k) { const f = fails.get(k); return !!(f && f.n >= 6 && f.until 
 function noteFail(k) { const f = fails.get(k) || { n: 0, until: 0 }; f.n++; f.until = Date.now() + 15 * 60 * 1000; fails.set(k, f); if (fails.size > 5000) fails.clear(); }
 function lockedFor(ip, email) { return locked(throttleKey(ip, email)) || locked('ip|' + ip); }
 
-function login(ip, email, password) {
+/* every password check costs real CPU, so only a few run at once; the rest are turned away at once instead of queueing up and starving the site */
+let checking = 0;
+const MAX_CHECKS = 3;
+async function login(ip, email, password) {
   email = String(email || '').trim().toLowerCase(); password = String(password || '');
   const k = throttleKey(ip, email), kip = 'ip|' + ip;
-  if (locked(k) || locked(kip)) return { status: 429 };
+  if (locked(k) || locked(kip) || checking >= MAX_CHECKS) return { status: 429 };
   const u = q.userByEmail.get(email);
-  const ok = checkPassword(password, u ? u.pass : DUMMY) && !!u;
+  let ok = false;
+  checking++;
+  try { ok = (await checkPasswordAsync(password, u ? u.pass : DUMMY)) && !!u; } finally { checking--; }
   if (!ok) { noteFail(k); noteFail(kip); return { status: 401 }; }
   fails.delete(k);
   const token = crypto.randomBytes(32).toString('base64url'), csrf = crypto.randomBytes(24).toString('base64url');

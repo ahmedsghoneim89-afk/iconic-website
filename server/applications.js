@@ -42,6 +42,9 @@ const isCvId = (id) => /^[a-f0-9]{32}$/.test(String(id || ''));
 
 /* ---- public: a candidate applies ---- */
 async function create(req, res) {
+  /* the limit is checked before the (up to 8 MB) body is read, so a flood of oversized requests costs almost nothing */
+  const ip = auth.hashIp(auth.clientIp(req)), now = Date.now();
+  if (q.recent.get(ip, now - 10 * 60 * 1000).n >= 4 || q.recentAll.get(now - 3600 * 1000).n >= 120) throw err(429, 'slow down');
   const b = await readJson(req, 8 * 1024 * 1024);
   const name = clean(b.name, 120), phone = clean(b.phone, 40), email = clean(b.email, 120), message = clean(b.message, 2000);
   const digits = phone.replace(/\D/g, '');
@@ -66,9 +69,6 @@ async function create(req, res) {
     const kind = sniffCv(bytes); if (!kind) throw err(415, 'Only PDF, DOC or DOCX files are accepted');
     cv = { bytes, kind, name: safeFileName(b.cv.name, kind.ext, 'cv') };
   }
-
-  const ip = auth.hashIp(auth.clientIp(req)), now = Date.now();
-  if (q.recent.get(ip, now - 10 * 60 * 1000).n >= 4 || q.recentAll.get(now - 3600 * 1000).n >= 120) throw err(429, 'slow down');
 
   let cvId = null;
   if (cv) { cvId = crypto.randomBytes(16).toString('hex'); const f = path.join(cvDir, cvId); fs.writeFileSync(f + '.tmp', cv.bytes, { mode: 0o600 }); fs.renameSync(f + '.tmp', f); }

@@ -24,8 +24,8 @@ async function readJson(req, limit = 1024 * 1024) {
   try { return JSON.parse(b.toString('utf8')); } catch (_) { const e = new Error('bad json'); e.status = 400; throw e; }
 }
 
-/* compression: brotli or gzip when the client accepts it. Results for identical bodies are cached. */
-const cz = new Map();
+/* compression: brotli or gzip when the client accepts it. Results for identical bodies are kept; the least recently used go first when the memory budget is reached. */
+const cz = new Map(); let czBytes = 0; const CZ_MAX_BYTES = 96 * 1024 * 1024;
 function pickEncoding(req) {
   const a = String(req.headers['accept-encoding'] || '');
   return /\bbr\b/.test(a) ? 'br' : /\bgzip\b/.test(a) ? 'gzip' : '';
@@ -33,9 +33,9 @@ function pickEncoding(req) {
 function compress(enc, body, key) {
   if (!enc) return body;
   const k = key ? enc + ':' + key : '';
-  if (k && cz.has(k)) return cz.get(k);
+  if (k) { const hit = cz.get(k); if (hit) { cz.delete(k); cz.set(k, hit); return hit; } }
   const out = enc === 'br' ? zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } }) : zlib.gzipSync(body, { level: 6 });
-  if (k) { if (cz.size > 400) cz.clear(); cz.set(k, out); }
+  if (k) { cz.set(k, out); czBytes += out.length; while (czBytes > CZ_MAX_BYTES && cz.size > 1) { const f = cz.keys().next().value; czBytes -= cz.get(f).length; cz.delete(f); } }
   return out;
 }
 const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml|manifest\+json|ld\+json)|image\/svg)/;

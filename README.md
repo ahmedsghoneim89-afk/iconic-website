@@ -80,7 +80,7 @@ chmod 755 backup.sh
 SITE_URL=https://your-domain.com TRUST_PROXY=1 ADMIN_EMAIL=you@example.com npm start
 ```
 
-وحط قدامه Caddy أو Nginx يعمل HTTPS ويبعت على `127.0.0.1:3000`. `TRUST_PROXY=1` لازم يتحط لما في Proxy قدام السيرفر، عشان حدود المحاولات تتحسب على IP الزائر الحقيقي مش على الـ Proxy.
+وحط قدامه Caddy أو Nginx يعمل HTTPS ويبعت على `127.0.0.1:3000`. `TRUST_PROXY=1` لازم يتحط لما في Proxy قدام السيرفر، عشان حدود المحاولات تتحسب على IP الزائر الحقيقي مش على الـ Proxy. التطبيق بيصدّق آخر عنوان في `X-Forwarded-For` (اللي ضافه الـ Proxy بتاعنا) وبيتجاهل اللي قبله لأن الزائر يقدر يكتبه. لو في Proxy تاني قدام الأول (زي Cloudflare) حط `TRUST_PROXY_HOPS=2`.
 
 ---
 

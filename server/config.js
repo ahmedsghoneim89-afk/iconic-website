@@ -12,6 +12,8 @@ module.exports = {
   dataDir: path.resolve(env.DATA_DIR || path.join(root, 'data')),
   defaultLang: env.DEFAULT_LANG === 'en' ? 'en' : 'ar',
   trustProxy: env.TRUST_PROXY === '1',
+  /* how many proxies stand between a visitor and this app (each one appends the address it saw); only the entry written by our own proxy is believed */
+  proxyHops: Math.max(1, Math.min(5, Number(env.TRUST_PROXY_HOPS) || 1)),
   adminEmail: (env.ADMIN_EMAIL || '').trim().toLowerCase(),
   adminPassword: env.ADMIN_PASSWORD || '',
   leadWebhook: env.LEAD_WEBHOOK_URL || '',

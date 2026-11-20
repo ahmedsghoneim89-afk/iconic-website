@@ -113,7 +113,8 @@ const need = (s, roles) => { if (!roles.includes(s.role)) throw err(403, 'Your a
 
 /* ---- router ---- */
 async function handle(req, res, url) {
-  const p = url.pathname.replace(/^\/api/, '') || '/', m = req.method, seg = p.split('/').filter(Boolean).map(decodeURIComponent);
+  const p = url.pathname.replace(/^\/api/, '') || '/', m = req.method; let seg;
+  try { seg = p.split('/').filter(Boolean).map(decodeURIComponent); } catch (_) { throw err(400, 'bad address'); }
 
   if (p === '/leads' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return createLead(req, res); }
   if (p === '/applications' && m === 'POST') { if (!auth.sameOrigin(req)) throw err(403, 'origin'); return applications.create(req, res); }
@@ -125,7 +126,7 @@ async function handle(req, res, url) {
   if (p === '/login' && m === 'POST') {
     if (!auth.sameOrigin(req)) throw err(403, 'origin');
     const b = await readJson(req, 4096), ip = auth.clientIp(req);
-    const r = auth.login(ip, b.email, b.password);
+    const r = await auth.login(ip, b.email, b.password);
     if (r.status === 429) throw err(429, 'Too many attempts. Try again in a few minutes.');
     if (r.status !== 200) throw err(401, 'Wrong email or password');
     return json(res, 200, { ok: true, csrf: r.csrf, email: r.email, role: r.role }, { 'Set-Cookie': auth.sessionCookies(r.token) });
