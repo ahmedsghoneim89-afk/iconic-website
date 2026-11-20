@@ -2,7 +2,6 @@
 /* "Sell your unit": the five-step form, and the private page where the sender follows the request. */
 const cfg = require('../config');
 const { esc } = require('../util');
-const I = require('../i18n.json');
 const F = require('./frag');
 const S = require('./seo');
 const P = require('./pages');
@@ -39,7 +38,7 @@ function messages(c) {
   o.who = { owner: t('sell.who.owner'), broker: t('sell.who.broker') };
   o.purpose = { sale: t('sell.purpose.sale'), rent: t('sell.purpose.rent') };
   o.fin = Object.fromEntries(sell.FINISHING.map((k) => [k, t('sell.fin.' + k)]));
-  o.type = Object.fromEntries(I.types.map((x) => [x[0], c.typeLabel(x[0])]));
+  o.type = Object.fromEntries(c.TYPES.map((x) => [x[0], c.typeLabel(x[0])]));
   return {
     err: e, l, r, o, sending: t('sell.sending'), next: t('sell.next'), submit: t('sell.submit'), stepOf: t('sell.stepof'), steps: [1, 2, 3, 4, 5].map((n) => t('sell.s' + n)),
     done: { ref: t('sell.done.lede'), copied: t('sell.done.copied'), copy: t('sell.done.copy') },
@@ -52,7 +51,7 @@ function sellForm(c) {
   const stepHead = (n) => `<h2 class="sell__h" id="sell-h-${n}" tabindex="-1">${esc(c.t('sell.s' + n))}</h2><p class="note sell__hint">${esc(c.t('sell.s' + n + '.hint'))}</p>`;
   const sel = (id, name, blankKey, extra) => `<select id="s-${id}" name="${name}" aria-describedby="es-${id}"${extra || ''}><option value="">${esc(c.t(blankKey || 'sell.choose'))}</option></select>`;
   const other = (id, labelKey) => `<div class="field sell__other" data-other="${id}" hidden><label for="s-${id}Other">${esc(c.t(labelKey))}</label>${input(id + 'Other', { name: id + 'Other' })}<p class="err" id="es-${id}Other" role="alert"></p></div>`;
-  const types = I.types.map((x) => [x[0], c.typeLabel(x[0])]);
+  const types = c.typeChoices.map((x) => [x[0], c.typeLabel(x[0])]);
   const place = hasCatalog
     ? `<div class="row2">${field(c, 'city', 'sell.city', sel('city', 'city'))}${other('city', 'sell.city')}</div>
 <div class="row2">${field(c, 'area', 'sell.area', sel('area', 'area'), ' data-f="area"')}${other('area', 'sell.area')}</div>

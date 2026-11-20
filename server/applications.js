@@ -77,6 +77,7 @@ async function create(req, res) {
   try { r = q.add.run(now, jobId, jobTitle, name, phone, email, message, cvId, cv ? cv.name : null, cv ? cv.kind.mime : null, cv ? cv.bytes.length : null, lang, ip); }
   catch (e) { if (cvId) fs.rm(path.join(cvDir, cvId), () => {}); throw e; }
   notify({ id: Number(r.lastInsertRowid), created: new Date(now).toISOString(), job: jobTitle, name, phone, email, message, hasCv: !!cv, lang });
+  require('./mailer').notify('application', { created: new Date(now).toISOString(), job: jobTitle, name, phone, email, message, hasCv: !!cv });
   json(res, 201, { ok: true });
 }
 function notify(app) {

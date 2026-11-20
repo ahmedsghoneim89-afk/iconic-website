@@ -63,7 +63,7 @@ function cached(key, build) {
   if (!e) { const r = build(); e = { html: r.html, status: r.status || 200, csp: csp(r.inline || []), etag: '"' + sha(r.html, 20) + '"' }; if (cache.size > 800) cache.clear(); cache.set(key, e); }
   return e;
 }
-const fkey = (f) => [f.developer, f.project, f.area, f.city].map((x) => (x ? x.id : '')).concat([f.type || '', f.purpose || '', f.beds || '']).join('-');
+const fkey = (f) => [f.developer, f.project, f.area, f.city].map((x) => (x ? x.id : '')).concat([f.type || '', f.purpose || '', f.beds || '', f.baths || '', f.priceMin || '', f.priceMax || '', f.areaMin || '', f.areaMax || '', f.currency || '', f.sort || '']).join('-');
 const ctxFor = (lang) => Ctx.make(lang, content.snapshot());
 function sendPage(req, res, e) {
   if (req.headers['if-none-match'] === e.etag && e.status === 200) { res.writeHead(304, Object.assign(baseHeaders(), { ETag: e.etag, 'Cache-Control': 'no-cache' })); return res.end(); }

@@ -43,6 +43,14 @@ const regionLink = (c, id) => (id ? link('/' + c.lang + '/properties/' + id, c.r
    the data is linked: a governorate offers only its areas, a developer only its projects. page.js applies the same rules while
    someone is choosing; here they decide what the page offers after the form is sent. */
 const BEDS = [1, 2, 3, 4, 5];
+const SORTS = ['newest', 'oldest', 'price_asc', 'price_desc'];
+const CURRENCY_IDS = ['EGP', 'USD', 'EUR', 'GBP', 'AED', 'SAR'];
+/* a number typed by a person: Arabic digits and thousands separators are fine, anything else is ignored */
+function typedNumber(v) {
+  const s = String(v || '').replace(/[\u0660-\u0669]/g, (d) => d.charCodeAt(0) - 0x660).replace(/[\u06F0-\u06F9]/g, (d) => d.charCodeAt(0) - 0x6F0).replace(/[,\u066C\s]/g, '').replace(/\u066B/g, '.');
+  const n = /^\d+(\.\d+)?$/.test(s) ? parseFloat(s) : 0;
+  return n > 0 && n <= 1e12 ? n : 0;
+}
 function resolveFilters(c, sp) {
   const get = (k) => String((sp && sp.get && sp.get(k)) || '').slice(0, 120);
   const K = c.catalog;
@@ -55,7 +63,16 @@ function resolveFilters(c, sp) {
   f.type = c.TYPES.some((x) => x[0] === type) ? type : '';
   f.purpose = c.PURPOSES.some((x) => x[0] === purpose) ? purpose : '';
   f.beds = beds >= 1 && beds <= 9 ? beds : 0;
-  f.active = !!(f.developer || f.project || f.area || f.city || f.type || f.purpose || f.beds);
+  const baths = parseInt(get('baths'), 10), cur = get('currency'), sort = get('sort');
+  f.baths = baths >= 1 && baths <= 9 ? baths : 0;
+  f.priceMin = typedNumber(get('price_min')); f.priceMax = typedNumber(get('price_max'));
+  f.areaMin = typedNumber(get('area_min')); f.areaMax = typedNumber(get('area_max'));
+  /* "from" above "to" is a slip of the hand, not an empty result */
+  if (f.priceMax && f.priceMin > f.priceMax) { const t = f.priceMin; f.priceMin = f.priceMax; f.priceMax = t; }
+  if (f.areaMax && f.areaMin > f.areaMax) { const t = f.areaMin; f.areaMin = f.areaMax; f.areaMax = t; }
+  f.currency = CURRENCY_IDS.includes(cur) ? cur : '';
+  f.sort = SORTS.includes(sort) ? sort : '';
+  f.active = !!(f.developer || f.project || f.area || f.city || f.type || f.purpose || f.beds || f.baths || f.priceMin || f.priceMax || f.areaMin || f.areaMax || f.currency || f.sort);
   return f;
 }
 const cascadeRows = (projects, weight) => projects.map((p) => ({ d: p.developer ? p.developer.slug : '', c: p.city.slug, a: p.area ? p.area.slug : '', p: p.slug, u: weight(p) }));
@@ -73,6 +90,11 @@ function select(c, name, label, groups, current, count) {
 /* a plain list of fixed choices (type, purpose, bedrooms) */
 function simpleSelect(c, name, label, options, current) {
   return `<label class="flt__f"><span>${esc(label)}</span><select name="${name}"><option value="">${esc(c.t('flt.all'))}</option>${options.map(([v, l]) => `<option value="${esc(v)}"${String(current) === String(v) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+}
+/* a from / to pair of numbers (price, size); sent as <name>_min and <name>_max */
+function rangeField(c, name, label, min, max) {
+  const one = (suffix, word, v) => `<input type="text" inputmode="decimal" autocomplete="off" name="${name}_${suffix}" value="${v ? esc(String(v)) : ''}" placeholder="${esc(c.t('flt.' + word))}" aria-label="${esc(label + ' – ' + c.t('flt.' + word))}">`;
+  return `<div class="flt__f flt__range" role="group" aria-label="${esc(label)}"><span>${esc(label)}</span><div class="flt__pair">${one('min', 'from', min)}<i aria-hidden="true">–</i>${one('max', 'to', max)}</div></div>`;
 }
 /* opts.rows: the projects to choose from; opts.project: offer a project list; opts.units: offer type, purpose and bedrooms */
 function filterForm(c, basePath, f, opts) {
@@ -98,16 +120,37 @@ function filterForm(c, basePath, f, opts) {
     });
   }
   if (opts.units) {
-    fields.push(simpleSelect(c, 'type', c.t('flt.type'), c.TYPES.map((x) => [x[0], x[1][c.lang]]), f.type));
-    fields.push(simpleSelect(c, 'purpose', c.t('flt.purpose'), c.PURPOSES.map((x) => [x[0], x[1][c.lang]]), f.purpose));
+    fields.push(simpleSelect(c, 'type', c.t('flt.type'), c.typeChoices.map((x) => [x[0], x[1][c.lang]]), f.type));
+    fields.push(simpleSelect(c, 'purpose', c.t('flt.purpose'), c.purposeChoices.map((x) => [x[0], x[1][c.lang]]), f.purpose));
     fields.push(simpleSelect(c, 'beds', c.t('flt.beds'), BEDS.map((n) => [n, c.fmtNum(n) + '+']), f.beds || ''));
+    fields.push(simpleSelect(c, 'baths', c.t('flt.baths'), BEDS.map((n) => [n, c.fmtNum(n) + '+']), f.baths || ''));
+    /* prices are compared as typed, so a currency choice appears only when the units are priced in more than one */
+    const currencies = CURRENCY_IDS.filter((x) => c.props.some((p) => p.currency === x));
+    if (currencies.length > 1) fields.push(simpleSelect(c, 'currency', c.t('flt.currency'), currencies.map((x) => [x, x]), f.currency));
+    fields.push(rangeField(c, 'price', c.t('flt.price'), f.priceMin, f.priceMax));
+    fields.push(rangeField(c, 'area', c.t('flt.size'), f.areaMin, f.areaMax));
+    fields.push(`<label class="flt__f flt__f--wide"><span>${esc(c.t('flt.sort'))}</span><select name="sort"><option value="">${esc(c.t('flt.sort.default'))}</option>${SORTS.map((v) => `<option value="${v}"${f.sort === v ? ' selected' : ''}>${esc(c.t('flt.sort.' + v))}</option>`).join('')}</select></label>`);
   }
   if (!fields.length) return '';
   return `<form class="flt" method="get" action="${esc(basePath)}" aria-label="${esc(c.t('flt.title'))}"${tree ? ` data-tree="${esc(tree)}"` : ''}>${fields.join('')}<div class="flt__go"><button class="btn btn--small btn--primary" type="submit">${esc(c.t('flt.apply'))}</button>${f.active ? `<a class="btn btn--small" href="${esc(basePath)}">${esc(c.t('flt.reset'))}</a>` : ''}</div></form>`;
 }
 function filterUnits(c, f) {
-  return c.props.filter((p) => (!f.developer || p.developerId === f.developer.id) && (!f.project || p.projectId === f.project.id) && (!f.area || p.areaId === f.area.id) && (!f.city || p.cityId === f.city.id)
-    && (!f.type || p.type === f.type) && (!f.purpose || p.purpose === f.purpose) && (!f.beds || (p.beds != null && p.beds >= f.beds)));
+  const list = c.props.filter((p) => (!f.developer || p.developerId === f.developer.id) && (!f.project || p.projectId === f.project.id) && (!f.area || p.areaId === f.area.id) && (!f.city || p.cityId === f.city.id)
+    && (!f.type || p.type === f.type) && (!f.purpose || p.purpose === f.purpose) && (!f.beds || (p.beds != null && p.beds >= f.beds)) && (!f.baths || (p.baths != null && p.baths >= f.baths))
+    && (!f.currency || p.currency === f.currency)
+    && (!(f.priceMin || f.priceMax) || (p.price != null && (!f.priceMin || p.price >= f.priceMin) && (!f.priceMax || p.price <= f.priceMax)))
+    && (!(f.areaMin || f.areaMax) || (p.areaNum != null && (!f.areaMin || p.areaNum >= f.areaMin) && (!f.areaMax || p.areaNum <= f.areaMax))));
+  return sortUnits(list, f.sort);
+}
+/* newest and oldest follow the day a unit was added; a unit with no price goes last either way */
+function sortUnits(list, sort) {
+  if (!sort) return list;
+  const price = (p) => (p.price == null ? null : p.price), when = (p) => p.createdAt || p.updatedAt || 0;
+  const cmp = {
+    newest: (a, b) => when(b) - when(a), oldest: (a, b) => when(a) - when(b),
+    price_asc: (a, b) => (price(a) == null) - (price(b) == null) || price(a) - price(b), price_desc: (a, b) => (price(a) == null) - (price(b) == null) || price(b) - price(a)
+  }[sort];
+  return list.map((p, i) => [p, i]).sort((x, y) => cmp(x[0], y[0]) || x[1] - y[1]).map((x) => x[0]);
 }
 /* the properties page, with the catalog filters; the lists come from the CRM projects, with the number of units in each */
 function unitFilterBlock(c, f) {
@@ -212,4 +255,4 @@ ${devs.length ? `<div class="latest__block"><div class="latest__head"><h2 class=
 </div></section>`;
 }
 
-module.exports = { homeBlock, propertiesPage, developersPage, developerPage, projectsPage, projectPage, areaPage, placesBlock, resolveFilters, filterUnits, unitFilterBlock, developerHasContent, projectHasContent, areaHasContent };
+module.exports = { homeBlock, propertiesPage, developersPage, developerPage, projectsPage, projectPage, areaPage, placesBlock, resolveFilters, filterUnits, sortUnits, unitFilterBlock, developerHasContent, projectHasContent, areaHasContent };

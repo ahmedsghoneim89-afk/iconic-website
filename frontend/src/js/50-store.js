@@ -1,7 +1,7 @@
 /* ---------- Content store ----------
    The admin dashboard writes company details, teams, agents and units to the artifact database; the site reads them live.
    Where the runtime offers no database (a plain page, or a visitor who is not signed in) none of this runs and the site shows its empty states. */
-const Store = { db: null, user: null, assets: null, downloads: null, canEdit: false, live: false, error: '', raw: { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [], branches: [], jobs: [] }, off: [] };
+const Store = { db: null, user: null, assets: null, downloads: null, canEdit: false, live: false, error: '', raw: { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, lists: null, teams: [], agents: [], properties: [], branches: [], jobs: [] }, off: [] };
 const blobUrl = (id) => id ? '/_blob/' + id : '';
 const refUrl = (r) => r ? (r.id ? blobUrl(r.id) : (r.url || '')) : '';
 const numOrNull = (v) => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
@@ -27,6 +27,7 @@ let applyTimer = 0;
 const scheduleApply = () => { clearTimeout(applyTimer); applyTimer = setTimeout(applyContent, 60); };
 /* raw documents -> the objects the page draws from. No drawing here, so it can run before the first render. */
 function hydrateData() {
+  applyLists(Store.raw.lists);
   const R = Store.raw, byOrder = (a, b) => orderOf(a) - orderOf(b) || String(a.id).localeCompare(String(b.id));
   const co = R.company || {};
   DATA.company = { whatsapp: co.whatsapp || null, phone: co.phone || null, email: co.email || null, address: co.address || null, hours: co.hours || null, social: co.social && typeof co.social === 'object' ? co.social : {} };
@@ -70,7 +71,7 @@ function subscribe(ref, key, single) {
 /* production: the server sends every document inside the page, so the first render already has the real content */
 function seedServerContent() {
   const D = SERVER.data || {};
-  ['company', 'texts', 'hotspots', 'about', 'layout'].forEach((k) => { Store.raw[k] = D[k] || null; });
+  ['company', 'texts', 'hotspots', 'about', 'layout', 'lists'].forEach((k) => { Store.raw[k] = D[k] || null; });
   ['teams', 'agents', 'properties', 'branches'].forEach((k) => { Store.raw[k] = Array.isArray(D[k]) ? D[k] : []; });
   Store.live = true; hydrateData();
 }
@@ -80,7 +81,7 @@ async function enableServerAdmin() {
     if (!me || !me.admin) return;
     const rest = restClient(me.csrf);
     Store.db = rest.db; Store.user = { canEdit: async () => true }; Store.canEdit = true; Store.assets = rest.assets; Store.downloads = rest.downloads; Store.me = me; Store.rest = rest; applyRoleSections();
-    ['company', 'texts', 'hotspots', 'about', 'layout', 'regions'].forEach((k) => subscribe(Store.db.doc('site/' + k), k, true));
+    ['company', 'texts', 'hotspots', 'about', 'layout', 'regions', 'lists'].forEach((k) => subscribe(Store.db.doc('site/' + k), k, true));
     ['teams', 'agents', 'properties', 'branches', 'jobs'].forEach((c) => subscribe(Store.db.collection(c), c, false));
     initAdminEntry();
   } catch (err) { console.warn('[ICONIC] admin session unavailable:', err); }

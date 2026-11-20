@@ -25,7 +25,9 @@ const STEP_OF = { new: 0, contacted: 1, inspection: 2, pricing: 2, published: 3,
 const FINISHING = ['finished', 'semi', 'core', 'furnished'];
 const WHO = ['owner', 'broker'];
 const CURRENCIES = ['EGP', 'USD', 'EUR', 'GBP', 'AED', 'SAR'];
-const TYPE_IDS = I.types.map((x) => x[0]), PURPOSE_IDS = I.purposes.map((x) => x[0]);
+const Lists = require('./lists');
+/* a seller picks from the unit types the company offers now; "sell or rent out" stays fixed */
+const PURPOSE_IDS = I.purposes.map((x) => x[0]);
 const MAX_PHOTOS = 15, MAX_PHOTO = 6 * 1024 * 1024, MAX_DOC = 8 * 1024 * 1024, MAX_TOTAL = 80 * 1024 * 1024, UPLOAD_DAYS = 7;
 
 const q = {
@@ -89,7 +91,7 @@ function summaryLines(r, lang, forStaff) {
   lines.push(w.name + ': ' + r.name + ' (' + w.who[r.who || 'owner'] + ')');
   lines.push(w.phone + ': ' + r.phone);
   if (r.email) lines.push(w.email + ': ' + r.email);
-  lines.push(w.unit + ': ' + [label(I.types, r.type, lang), label(I.purposes, r.purpose, lang)].filter(Boolean).join(' - '));
+  lines.push(w.unit + ': ' + [label(Lists.pairs(Lists.read().types), r.type, lang), label(I.purposes, r.purpose, lang)].filter(Boolean).join(' - '));
   const wh = whereOf(r, ' > '); if (wh) lines.push(w.where + ': ' + wh);
   const spec = [];
   if (r.area_m2) spec.push(w.size + ': ' + num(r.area_m2) + ' ' + w.sqm);
@@ -138,6 +140,9 @@ async function notifyTeam(id) {
   try { state = await pushWhatsApp(r); } catch (e) { state = 'failed:error'; }
   q.setWa.run(state, id);
   if (state !== 'off') event(id, 'notify', 'system', { text: 'whatsapp ' + state });
+  /* the team's mailbox: the same facts as the WhatsApp message, as rows */
+  const mail = await require('./mailer').notify('sell', { ref: refOf(r.id), created: new Date(r.created_at).toISOString(), rows: (lang) => summaryLines(r, lang, true).map((l) => l.replace(/\*/g, '')).filter((l) => l.includes(': ')).slice(1).map((l) => { const i = l.indexOf(': '); return [l.slice(0, i), l.slice(i + 2)]; }) });
+  if (mail !== 'off') event(id, 'notify', 'system', { text: 'email ' + mail });
   if (cfg.leadWebhook) {
     postJson(cfg.leadWebhook, {}, { event: 'sell_request.created', site: cfg.siteUrl, request: { id: r.id, ref: refOf(r.id), created: new Date(r.created_at).toISOString(), name: r.name, who: r.who, phone: r.phone, email: r.email, city: r.city_name, area: r.area_name, project: r.project_name, type: r.type, purpose: r.purpose, areaM2: r.area_m2, beds: r.beds, baths: r.baths, finishing: r.finishing, floor: r.floor, price: r.price, currency: r.currency, valuation: !!r.valuation, negotiable: !!r.negotiable, details: r.details, video: r.video_url, lang: r.lang, text: summaryLines(r, 'ar', true).join('\n') } })
       .catch((e) => console.warn('[sell] webhook failed:', e.message));
@@ -173,7 +178,7 @@ function validate(b) {
   if (!cityName) throw err(422, 'city');
 
   const type = clean(b.type, 30), purpose = clean(b.purpose, 30);
-  if (!TYPE_IDS.includes(type)) throw err(422, 'type');
+  if (!Lists.read().types.some((x) => x.active && x.id === type)) throw err(422, 'type');
   if (!PURPOSE_IDS.includes(purpose)) throw err(422, 'purpose');
   const areaM2 = toNum(b.areaM2, 1, 1000000, 'size'); if (areaM2 == null) throw err(422, 'size');
   const beds = toNum(b.beds, 0, 50, 'beds'), baths = toNum(b.baths, 0, 50, 'baths');
@@ -341,7 +346,7 @@ function prepareUnit(id) {
   const text = [r.details || '', extra.join('. ')].filter(Boolean).join('\n\n');
   const both = (en, arText) => ({ en, ar: arText });
   const unit = {
-    title: both(label(I.types, r.type, 'en') + ' ' + num(r.area_m2) + ' m² - ' + where, label(I.types, r.type, 'ar') + ' ' + num(r.area_m2) + ' م² - ' + where),
+    title: both(label(Lists.pairs(Lists.read().types), r.type, 'en') + ' ' + num(r.area_m2) + ' m² - ' + where, label(Lists.pairs(Lists.read().types), r.type, 'ar') + ' ' + num(r.area_m2) + ' م² - ' + where),
     projectId: project ? project.crmId : '', project: project ? both('', '') : both(r.project_name || '', r.project_name || ''),
     region: city && city.region ? city.region : '', type: r.type, purpose: r.purpose, location: both(r.area_name || r.city_name || '', r.area_name || r.city_name || ''),
     agent: r.agent_id || '', price: r.valuation ? null : r.price, currency: r.currency || 'EGP', beds: r.beds, baths: r.baths, area: r.area_m2,

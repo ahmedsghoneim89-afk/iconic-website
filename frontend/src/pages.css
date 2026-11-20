@@ -96,8 +96,10 @@ html[lang="ar"] .job__title{font-weight:700}
 .foot--pg .contact-info{border-block-start:0}
 .foot--pg .ci__row{grid-template-columns:minmax(0,1fr);gap:.2rem;padding-block:var(--s-3)}
 .foot--pg .ci__social{display:flex;gap:var(--s-2)}
-.foot--pg .branches{gap:var(--s-3)}
-.foot--pg .branch{padding:var(--s-4)}
+.foot.foot--pg .wrap.foot__branches{display:block;margin-block-start:var(--s-7)}
+@media (max-width:640px){.foot.foot--pg .foot__base{display:grid;grid-template-columns:auto auto;justify-content:space-between;gap:var(--s-3) var(--s-5)}.foot.foot--pg .foot__base .foot__copy{grid-column:1/-1}.foot.foot--pg .foot__base .foot__link,.foot.foot--pg .foot__base .foot__link+.foot__link{margin:0}}
+.foot--pg .branches{gap:var(--s-4)}
+.foot--pg .cbranches__h{font-size:clamp(1.4rem,2.4vw,1.9rem);margin-block-end:var(--s-4)}
 .foot--pg .act{color:var(--c-ivory-100)}
 .foot--pg .act:hover,.foot--pg .act:focus-visible{color:var(--c-gold-300)}
 .pgp .specs{margin-block-start:var(--s-2)}

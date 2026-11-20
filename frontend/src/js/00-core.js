@@ -50,6 +50,17 @@ const PURPOSES = [['sale', { en: 'For sale', ar: 'للبيع' }], ['rent', { en:
 const JOB_TYPES = [['full', { en: 'Full-time', ar: 'دوام كامل' }], ['part', { en: 'Part-time', ar: 'دوام جزئي' }], ['contract', { en: 'Contract', ar: 'عقد' }], ['intern', { en: 'Internship', ar: 'تدريب' }]];
 const keyLabel = (list, k) => { const f = list.find((x) => x[0] === k); return f ? f[1][App.lang] : (k || ''); };
 const typeLabel = (k) => keyLabel(TYPES, k), purposeLabel = (k) => keyLabel(PURPOSES, k);
+/* The company edits these two lists from the dashboard. The saved choices replace the shipped ones in place, so every reader sees the same lists;
+   a hidden choice stays readable on old units but is not offered for new ones. */
+const DEFAULT_LISTS = { types: TYPES.slice(), purposes: PURPOSES.slice() }, LIST_OFF = { types: new Set(), purposes: new Set() };
+function applyLists(d) {
+  [['types', TYPES], ['purposes', PURPOSES]].forEach(([k, arr]) => {
+    const saved = d && Array.isArray(d[k]) && d[k].length ? d[k].filter((x) => x && x.id) : null;
+    arr.splice(0, arr.length, ...(saved ? saved.map((x) => [x.id, { en: x.en || x.ar || x.id, ar: x.ar || x.en || x.id }]) : DEFAULT_LISTS[k]));
+    LIST_OFF[k].clear(); if (saved) saved.forEach((x) => { if (x.active === false) LIST_OFF[k].add(x.id); });
+  });
+}
+const listChoices = (kind, current) => (kind === 'types' ? TYPES : PURPOSES).filter((x) => !LIST_OFF[kind].has(x[0]) || x[0] === current);
 
 /* --- Approved company data. Nothing here is invented: every field is empty until ICONIC supplies it. --- */
 const DATA = {
@@ -180,7 +191,7 @@ const I18N = {
     'pg.proj.units': 'Units in {name}', 'pg.proj.noUnits': 'No units are published in this project yet.', 'pg.proj.developer': 'Developer', 'pg.proj.where': 'Location', 'pg.proj.all': 'All projects', 'pg.proj.about': 'About this project',
     'pg.area.lede': 'Projects and units in {area}, {city}.', 'pg.area.projects': 'Projects in {area}', 'pg.area.units': 'Units in {area}', 'pg.area.noProjects': 'No projects in this area yet.', 'pg.area.noUnits': 'No units are published in this area yet.', 'pg.area.about': 'About {area}',
     'pg.region.places': 'Cities and areas in {region}',
-    'flt.title': 'Filter', 'flt.developer': 'Developer', 'flt.project': 'Project', 'flt.area': 'Area', 'flt.city': 'Governorate', 'flt.type': 'Type', 'flt.purpose': 'Purpose', 'flt.beds': 'Bedrooms', 'flt.all': 'All', 'flt.apply': 'Show results', 'flt.reset': 'Clear filters',
+    'flt.title': 'Filter', 'flt.developer': 'Developer', 'flt.project': 'Project', 'flt.area': 'Area', 'flt.city': 'Governorate', 'flt.type': 'Type', 'flt.purpose': 'Purpose', 'flt.beds': 'Bedrooms', 'flt.all': 'All', 'flt.apply': 'Show results', 'flt.reset': 'Clear filters', 'flt.baths': 'Bathrooms', 'flt.price': 'Price', 'flt.size': 'Size (m²)', 'flt.from': 'From', 'flt.to': 'To', 'flt.currency': 'Currency', 'flt.sort': 'Sort by', 'flt.sort.default': 'Default order', 'flt.sort.newest': 'Newest first', 'flt.sort.oldest': 'Oldest first', 'flt.sort.price_asc': 'Lowest price first', 'flt.sort.price_desc': 'Highest price first',
     'flt.none.title': 'Nothing matches these filters', 'flt.none.body': 'Remove a filter or clear them all to see more.',
     'prop.developer': 'Developer', 'prop.projectName': 'Project', 'prop.where': 'Area', 'pg.prop.moreProject': 'More in {name}',
     'nav.careers': 'Careers', 'foot.careers': 'Careers', 'contact.branches': 'Our branches', 'branch.map': 'Open in Maps', 'branch.call': 'Call', 'branch.hours': 'Hours',
@@ -333,7 +344,7 @@ const I18N = {
     'pg.proj.units': 'وحدات {name}', 'pg.proj.noUnits': 'لا توجد وحدات منشورة في هذا المشروع حاليًا.', 'pg.proj.developer': 'المطور', 'pg.proj.where': 'الموقع', 'pg.proj.all': 'كل المشاريع', 'pg.proj.about': 'عن هذا المشروع',
     'pg.area.lede': 'مشاريع ووحدات في {area}، {city}.', 'pg.area.projects': 'مشاريع {area}', 'pg.area.units': 'وحدات {area}', 'pg.area.noProjects': 'لا توجد مشاريع في هذه المنطقة حاليًا.', 'pg.area.noUnits': 'لا توجد وحدات منشورة في هذه المنطقة حاليًا.', 'pg.area.about': 'عن {area}',
     'pg.region.places': 'المدن والمناطق في {region}',
-    'flt.title': 'تصفية', 'flt.developer': 'المطور', 'flt.project': 'المشروع', 'flt.area': 'المنطقة', 'flt.city': 'المحافظة', 'flt.type': 'النوع', 'flt.purpose': 'الغرض', 'flt.beds': 'غرف النوم', 'flt.all': 'الكل', 'flt.apply': 'عرض النتائج', 'flt.reset': 'مسح التصفية',
+    'flt.title': 'تصفية', 'flt.developer': 'المطور', 'flt.project': 'المشروع', 'flt.area': 'المنطقة', 'flt.city': 'المحافظة', 'flt.type': 'النوع', 'flt.purpose': 'الغرض', 'flt.beds': 'غرف النوم', 'flt.all': 'الكل', 'flt.apply': 'عرض النتائج', 'flt.reset': 'مسح التصفية', 'flt.baths': 'الحمامات', 'flt.price': 'السعر', 'flt.size': 'المساحة (م²)', 'flt.from': 'من', 'flt.to': 'إلى', 'flt.currency': 'العملة', 'flt.sort': 'الترتيب', 'flt.sort.default': 'الترتيب الافتراضي', 'flt.sort.newest': 'الأحدث أولاً', 'flt.sort.oldest': 'الأقدم أولاً', 'flt.sort.price_asc': 'الأقل سعراً أولاً', 'flt.sort.price_desc': 'الأعلى سعراً أولاً',
     'flt.none.title': 'لا توجد نتائج مطابقة', 'flt.none.body': 'أزل تصفية أو امسحها كلها لترى المزيد.',
     'prop.developer': 'المطور', 'prop.projectName': 'المشروع', 'prop.where': 'المنطقة', 'pg.prop.moreProject': 'المزيد في {name}',
     'nav.careers': 'الوظائف', 'foot.careers': 'الوظائف', 'contact.branches': 'فروعنا', 'branch.map': 'افتح في الخرائط', 'branch.call': 'اتصل', 'branch.hours': 'المواعيد',

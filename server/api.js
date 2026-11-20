@@ -7,6 +7,7 @@ const auth = require('./auth');
 const content = require('./content');
 const applications = require('./applications');
 const sell = require('./sell');
+const mailer = require('./mailer');
 const catalog = require('./catalog');
 const catalogAdmin = require('./catalog_admin');
 const { readJson, readBody, sha } = require('./util');
@@ -76,7 +77,17 @@ async function createLead(req, res) {
   const r = qLead.add.run(...row);
   const lead = { id: Number(r.lastInsertRowid), created: new Date(now).toISOString(), interest, name, phone, email, message, property: row[6], agent: row[7], lang, page: row[9] };
   notify(lead);
+  mailLead(lead);
   json(res, 201, { ok: true });
+}
+/* the team's mailbox, when it is set up: names the unit and the agent so the email reads on its own */
+function mailLead(lead) {
+  let propertyTitle = '', agentName = '';
+  try {
+    const raw = require('./content').snapshot().raw, pr = raw.properties.find((x) => x.id === lead.property), ag = raw.agents.find((x) => x.id === lead.agent);
+    if (pr && pr.title) propertyTitle = pr.title.en || pr.title.ar || ''; if (ag && ag.name) agentName = ag.name.en || ag.name.ar || '';
+  } catch (_) { /* the plain ids are enough */ }
+  mailer.notify('lead', Object.assign({}, lead, { propertyTitle, agentName }));
 }
 /* optional hook (Zapier, Make, n8n, Slack…): fire and forget, never blocks or fails the visitor */
 function notify(lead) {
@@ -169,6 +180,14 @@ async function handle(req, res, url) {
     throw err(404, 'not found');
   }
 
+  /* the company mailbox the team notices are sent from: admin only, and the password never comes back out */
+  if (seg[0] === 'email-settings') {
+    need(s, ['admin']);
+    if (!seg[1] && m === 'GET') return json(res, 200, mailer.view());
+    if (!seg[1] && m === 'PUT') return json(res, 200, mailer.save(await readJson(req, 16 * 1024)));
+    if (seg[1] === 'test' && m === 'POST') return json(res, 200, await mailer.test(s.email));
+    throw err(404, 'not found');
+  }
   if (seg[0] === 'db') {
     const col = seg[1], id = seg[2];
     if (m === 'GET' && col && !id) return json(res, 200, { docs: content.list(col) });

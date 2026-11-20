@@ -30,7 +30,7 @@ function homePage(c, opts) {
   b = b.replace(/<button class="lang"[^>]*>[^<]*<\/button>/, `<a class="lang" id="langBtn" href="/${o2}/" hreflang="${o2}" lang="${o2}" aria-label="${esc(c.t('lang.aria'))}">${esc(c.t('lang.label'))}</a>`);
 
   const strip1 = (a) => (Array.isArray(a) ? a.map(strip) : a);
-  const boot = { lang: l, site: cfg.siteUrl, alt: { en: '/en/', ar: '/ar/' }, data: { company: c.raw.company, texts: c.raw.texts, hotspots: c.raw.hotspots, about: c.raw.about, layout: c.raw.layout, teams: strip1(c.raw.teams), agents: strip1(c.raw.agents), properties: strip1(c.rawProps), branches: strip1(c.raw.branches) } };
+  const boot = { lang: l, site: cfg.siteUrl, alt: { en: '/en/', ar: '/ar/' }, data: { lists: c.raw.lists, company: c.raw.company, texts: c.raw.texts, hotspots: c.raw.hotspots, about: c.raw.about, layout: c.raw.layout, teams: strip1(c.raw.teams), agents: strip1(c.raw.agents), properties: strip1(c.rawProps), branches: strip1(c.raw.branches) } };
   const headJs = `(function(){var d=document.documentElement;d.classList.add('js');try{history.scrollRestoration='manual';}catch(e){}try{document.cookie='iconic_lang=${l};path=/;max-age=31536000;SameSite=Lax';}catch(e){}try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('reduced');else if(!${opts.bot ? 'true' : 'false'}&&!location.hash)d.classList.add('intro-on');}catch(e){if(!${opts.bot ? 'true' : 'false'})d.classList.add('intro-on');}})();`;
   const bootJs = 'window.__ICONIC__=' + jsonForScript(boot) + ';';
   inline.push(headJs, bootJs);

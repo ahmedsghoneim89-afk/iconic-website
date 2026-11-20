@@ -54,7 +54,22 @@ const regions = (v) => {
   return out;
 };
 
+/* editable drop-down lists: every choice has a lasting id, a name in each language and a switch that hides it from new use */
+const LIST_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
+const listItem = (v) => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) fail('list item expected');
+  const id = S(40)(v.id).toLowerCase(), en = S(60)(v.en), ar = S(60)(v.ar);
+  if (!LIST_ID.test(id)) fail('bad list id'); if (!en && !ar) fail('name required');
+  return { id, en, ar, active: v.active !== false };
+};
+const listOf = (v) => {
+  const items = arr(listItem, 60)(v), seen = new Set();
+  items.forEach((x) => { if (seen.has(x.id)) fail('duplicate id'); seen.add(x.id); });
+  if (!items.some((x) => x.active)) fail('keep at least one visible choice');
+  return items;
+};
 const SITE = {
+  lists: obj({ types: listOf, purposes: listOf }),
   company: obj({ whatsapp: S(30), phone: S(30), email, address: bi(500), hours: bi(500), social: obj(Object.fromEntries(SOCIALS.map((k) => [k, httpsUrl(300)]))) }),
   texts: obj({ en: textsLang('en'), ar: textsLang('ar') }),
   hotspots,
@@ -83,7 +98,7 @@ const COLLECTIONS = {
   },
   agents: (v) => { const o = obj({ team: S(80), name: bi(120), role: bi(120), photo: img, whatsapp: S(30), phone: S(30), email, order: num(-9999, 9999) })(v); if (!o.team) fail('team required'); if (!(o.name && (o.name.en || o.name.ar))) fail('name required'); return o; },
   properties: (v) => {
-    const o = obj({ title: bi(160), project: bi(160), projectId: oid, location: bi(200), description: bi(4000), seoTitle: bi(120), seoDescription: bi(320), region: oneOf(REGION_IDS), type: oneOf(TYPE_IDS), purpose: oneOf(PURPOSE_IDS), agent: S(80), price: num(0, 1e12), currency: oneOf(CURRENCIES, true), beds: num(0, 99), baths: num(0, 99), area: num(0, 1e6), images: arr(img, 30), order: num(-9999, 9999) })(v);
+    const o = obj({ title: bi(160), project: bi(160), projectId: oid, location: bi(200), description: bi(4000), seoTitle: bi(120), seoDescription: bi(320), region: oneOf(REGION_IDS), type: oneOf(require('./lists').ids('types')), purpose: oneOf(require('./lists').ids('purposes')), agent: S(80), price: num(0, 1e12), currency: oneOf(CURRENCIES, true), beds: num(0, 99), baths: num(0, 99), area: num(0, 1e6), images: arr(img, 30), order: num(-9999, 9999) })(v);
     if (!(o.title && (o.title.en || o.title.ar))) fail('title required'); if (!o.region || !o.type || !o.purpose) fail('region, type and purpose required'); return o;
   }
 };

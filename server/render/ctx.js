@@ -3,11 +3,15 @@
 const I = require('../i18n.json');
 const cfg = require('../config');
 
-const REGIONS = I.regions, TYPES = I.types, PURPOSES = I.purposes, JOB_TYPES = I.jobTypes;
+const Lists = require('../lists');
+const REGIONS = I.regions, JOB_TYPES = I.jobTypes;
 const clip = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); if (s.length <= n) return s; const cut = s.slice(0, n - 1); return cut.slice(0, Math.max(cut.lastIndexOf(' '), n * 0.6)).replace(/[,.;:،\-–—\s]+$/, '') + '…'; };
 
 function make(lang, snap) {
   const raw = snap.raw;
+  /* the editable lists: TYPES and PURPOSES know every choice (for names and for reading shared links), the *Choices are what a visitor or editor is offered */
+  const lst = Lists.normalize(raw.lists), TYPES = Lists.pairs(lst.types), PURPOSES = Lists.pairs(lst.purposes);
+  const typeChoices = Lists.pairs(lst.types.filter((x) => x.active)), purposeChoices = Lists.pairs(lst.purposes.filter((x) => x.active));
   const texts = Object.assign({}, I.i18n[lang]);
   const own = (raw.texts && raw.texts[lang]) || {};
   for (const k of Object.keys(own)) if (Object.prototype.hasOwnProperty.call(I.i18n[lang], k) && typeof own[k] === 'string' && own[k].trim()) texts[k] = own[k];
@@ -80,7 +84,7 @@ function make(lang, snap) {
       title: L(p.title), project: pr ? pr.name : L(p.project), location: pr ? (pr.area ? pr.area.name : pr.city.name) : L(p.location),
       projectId: pr ? pr.id : '', projectUrl: pr && pr.active ? pr.url : '', developerId: pr && pr.developer ? pr.developer.id : '', cityId: pr ? pr.city.id : '', areaId: pr && pr.area ? pr.area.id : '',
       description: L(p.description), seoTitle: L(p.seoTitle), seoDescription: L(p.seoDescription),
-      images: (p.images || []).map(imgPath).filter(Boolean), updatedAt: p._u || 0
+      images: (p.images || []).map(imgPath).filter(Boolean), updatedAt: p._u || 0, createdAt: p.createdAt || p._u || 0
     };
   }).filter((p) => p.slug);
 
@@ -90,7 +94,7 @@ function make(lang, snap) {
     id: j.id, slug: j.slug, url: '/' + lang + '/careers/' + j.slug, title: L(j.title), department: L(j.department), location: L(j.location), type: j.type || 'full', typeLabel: jobTypeLabel(j.type || 'full'),
     description: L(j.description), requirements: L(j.requirements), posted: j.posted || '', closes: j.closes || '', updatedAt: j._u || 0
   })).filter((j) => j.title);
-  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, regionsLabel, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, rawProps, catalog, branches, jobs, today, REGIONS, TYPES, PURPOSES, clip, brand: cfg.brand, updated: snap.updated };
+  return { lang, dir: lang === 'ar' ? 'rtl' : 'ltr', raw, texts, t, fmtNum, plural, L, regionName, regionsLabel, typeLabel, purposeLabel, jobTypeLabel, priceText, imgPath, abs, company, layout, regionSeo, agents, agentById, teams, regionRank, props, rawProps, catalog, branches, jobs, today, REGIONS, TYPES, PURPOSES, typeChoices, purposeChoices, clip, brand: cfg.brand, updated: snap.updated };
 }
 
 const waNumber = (v) => { let n = String(v || '').replace(/\D/g, ''); if (/^01\d{9}$/.test(n)) n = '20' + n.slice(1); return n; };

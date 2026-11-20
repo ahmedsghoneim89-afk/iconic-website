@@ -49,12 +49,13 @@ function innerHeader(c, o) {
 <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="nav">${esc(c.t('nav.menu'))}</button></header>`;
 }
 function innerFooter(c, o) {
-  const l = c.lang, info = F.contactInfo(c), acts = F.contactActions(c);
+  const l = c.lang, info = F.contactInfo(c, { branches: false }), acts = F.contactActions(c);
   return `<footer class="foot foot--pg"><div class="wrap foot__cols">
 <div class="foot__about"><a class="foot__brand" href="/${l}/" aria-label="${esc(cfg.brand)}"><img class="foot__img" src="/logo.svg" alt="${esc(cfg.brand)}" width="106" height="112" loading="lazy"></a><p>${esc(c.t('meta.desc'))}</p></div>
 ${F.activeRegions(c).length ? `<nav aria-label="${esc(c.t('home.regions'))}"><h2 class="foot__h">${esc(c.t('home.regions'))}</h2><ul>${F.activeRegions(c).map((r) => `<li><a href="/${l}/properties/${r.id}">${esc(r[l])}</a></li>`).join('')}</ul></nav>` : ''}
 ${c.catalog.shownProjects.length ? `<nav aria-label="${esc(c.t('nav.projects'))}"><h2 class="foot__h">${esc(c.t('nav.projects'))}</h2><ul><li><a href="/${l}/projects">${esc(c.t('pg.proj.title'))}</a></li><li><a href="/${l}/developers">${esc(c.t('pg.dev.title'))}</a></li></ul></nav>` : ''}
 <div class="foot__contact"><h2 class="foot__h">${esc(c.t('nav.contact'))}</h2>${acts ? `<div class="contact-actions">${acts}</div>` : ''}<div class="contact-info">${info}</div></div></div>
+${c.branches.length ? `<div class="wrap cbranches foot__branches">${F.branchesSection(c)}</div>` : ''}
 <div class="wrap foot__base"><span class="foot__copy">© ${new Date().getFullYear()} ${esc(c.t('foot.rights'))}</span><a class="foot__link" href="/${l}/sell">${esc(c.t('foot.sell'))}</a><a class="foot__link" href="/${l}/careers">${esc(c.t('foot.careers'))}</a></div></footer>`;
 }
 function crumbsHtml(c, items) {

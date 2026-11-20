@@ -4,12 +4,13 @@ const store = require('./db');
 const { validate, readable } = require('./schema');
 const { slugBase, httpError } = require('./util');
 
-const SITE_IDS = ['company', 'texts', 'hotspots', 'about', 'layout', 'regions'];
+const Lists = require('./lists');
+const SITE_IDS = ['company', 'texts', 'hotspots', 'about', 'layout', 'regions', 'lists'];
 let cache = null, cacheVersion = -1;
 
 function snapshot() {
   if (cache && cacheVersion === store.version) return cache;
-  const raw = { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, teams: [], agents: [], properties: [], branches: [], jobs: [], developers: [], projects: [], cities: [], areas: [] };
+  const raw = { company: null, texts: null, hotspots: null, about: null, layout: null, regions: null, lists: null, teams: [], agents: [], properties: [], branches: [], jobs: [], developers: [], projects: [], cities: [], areas: [] };
   let updated = 0;
   for (const d of store.allDocs()) {
     updated = Math.max(updated, d.updatedAt);
@@ -28,7 +29,8 @@ function slugFor(id, data, fallback) {
 }
 function write(col, id, body) {
   const data = validate(col, id, body);
-  if (col === 'properties') { const prev = store.getDoc(col, id); data.slug = (prev && prev.data.slug) || slugFor(id, data); }   // a unit keeps its address even when its title changes
+  if (col === 'site' && id === 'lists') Lists.assertSafe(data);   // a choice that units or requests still use can be hidden, never dropped
+  if (col === 'properties') { const prev = store.getDoc(col, id); data.slug = (prev && prev.data.slug) || slugFor(id, data); data.createdAt = (prev && prev.data.createdAt) || (prev && prev.updatedAt) || Date.now(); }   // a unit keeps its address and the day it was added
   if (col === 'properties' && data.projectId) {   // a unit linked to a CRM project takes its website region from the project's city
     const pr = store.getDoc('projects', 'p_' + data.projectId);
     if (!pr || pr.data.crmDeleted) throw httpError(422, 'unknown project');

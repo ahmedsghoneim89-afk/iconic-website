@@ -205,7 +205,7 @@ const orderField = (v) => fieldWrap(ta('f.order'), input('order', v == null ? ''
 /* ---------- sections ---------- */
 function sectionHead(title, lead, action) { return h('header', { class: 'adm__head' }, h('div', null, h('h2', { text: title }), lead ? h('p', { class: 'note', text: lead }) : null), action || null); }
 const addBtn = (label, fn) => h('button', { type: 'button', class: 'btn btn--small btn--primary', onclick: fn, text: label });
-const goSec = (s) => { AS.sec = s; AS.form = null; drawAdmin(); };
+const goSec = (s) => { AS.sec = s; AS.form = null; AS.lists = null; if (typeof EM !== 'undefined') { EM.data = null; EM.clearPw = false; } drawAdmin(); };
 
 function viewOverview() {
   const R = Store.raw, c = R.company || {};
@@ -374,8 +374,8 @@ function unitForm(id, prefill, fromSell) {
     bil('title', ta('un.name'), r && r.title, false), ...(SERVER ? [catalogProjectField(r)] : []), bil('project', ta('un.project'), r && r.project, false),
     h('div', { class: 'af__row' },
       fieldWrap(ta('un.region'), select('region', regionOptions(), r ? r.region : (AS.filters.region || ''), { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'region' })),
-      fieldWrap(ta('un.type'), select('type', TYPES.map(([k, l]) => [k, l[App.lang]]), r ? r.type : '', { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'type' })),
-      fieldWrap(ta('un.purpose'), select('purpose', PURPOSES.map(([k, l]) => [k, l[App.lang]]), r ? r.purpose : '', { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'purpose' }))),
+      fieldWrap(ta('un.type'), select('type', listChoices('types', r && r.type).map(([k, l]) => [k, l[App.lang]]), r ? r.type : '', { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'type' })),
+      fieldWrap(ta('un.purpose'), select('purpose', listChoices('purposes', r && r.purpose).map(([k, l]) => [k, l[App.lang]]), r ? r.purpose : '', { blank: ta('f.choose') }), null, h('p', { class: 'af__e', 'data-err': 'purpose' }))),
     bil('location', ta('un.location'), r && r.location, false),
     fieldWrap(ta('un.agent'), select('agent', agentOpts, r ? r.agent : (AS.filters.agent && AS.filters.agent !== '-' ? AS.filters.agent : ''), { blank: ta('f.none') })),
     h('div', { class: 'af__row' }, num('price', ta('un.price'), r && r.price, 'any'), fieldWrap(ta('un.currency'), select('currency', CURRENCIES.map((c) => [c, c]), r && r.currency ? r.currency : 'EGP')), num('beds', ta('un.beds'), r && r.beds), num('baths', ta('un.baths'), r && r.baths), num('area', ta('un.area'), r && r.area, 'any')),
@@ -426,6 +426,7 @@ const VIEWS = { overview: viewOverview, company: viewCompany, teams: viewTeams, 
 function drawChrome() {
   $('.adm__title', admEl).textContent = ta('title'); $('.adm__lang', admEl).textContent = ta('lang'); $('.adm__x', admEl).textContent = ta('close');
   $$('.adm__nav button', admEl).forEach((b) => { b.textContent = ta('nav.' + b.dataset.sec) + (b.dataset.sec === 'leads' && AS.newLeads ? ' (' + fmtNum(AS.newLeads) + ')' : '') + (b.dataset.sec === 'applications' && AS.newApps ? ' (' + fmtNum(AS.newApps) + ')' : '') + (b.dataset.sec === 'sell' && AS.newSell ? ' (' + fmtNum(AS.newSell) + ')' : ''); b.setAttribute('aria-current', String(b.dataset.sec === AS.sec)); });
+  paintNavGroups(admEl);
   const warn = $('.adm__warn', admEl); warn.hidden = !(!Store.db || Store.error); warn.textContent = !Store.db ? ta('store.off') : ta('store.err');
 }
 function drawAdmin() {
@@ -440,7 +441,7 @@ function adminRefresh() {
   const y = admBody.scrollTop; drawAdmin(); admBody.scrollTop = y;
 }
 function buildAdmin() {
-  const nav = h('nav', { class: 'adm__nav', 'aria-label': 'Dashboard' }, SECTIONS.map((s) => h('button', { type: 'button', 'data-sec': s, onclick: () => goSec(s) })));
+  const nav = buildNav(goSec);
   admBody = h('div', { class: 'adm__body' });
   admEl = h('div', { class: 'adm', id: 'adminRoot', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Content dashboard', hidden: true, onkeydown: (e) => { if (e.key === 'Escape' && !$('.adm__modal', admEl)) closeAdmin(); } },
     h('aside', { class: 'adm__side' }, h('div', { class: 'adm__brand' }, h('span', { class: 'adm__title' })), nav,
@@ -453,7 +454,7 @@ function openAdmin() {
   if (!Store.canEdit) return;
   if (!admEl) buildAdmin();
   if (!SECTIONS.includes(AS.sec)) AS.sec = SECTIONS[0];
-  AS.open = true; AS.form = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); refreshSellCount(); loadCatalog(); }
+  AS.open = true; AS.form = null; AS.lists = null; admEl.hidden = false; root.style.overflow = 'hidden'; drawAdmin(); if (SERVER) { refreshLeadCount(); refreshAppCount(); refreshSellCount(); loadCatalog(); }
   $('.adm__nav button[aria-current=true]', admEl).focus({ preventScroll: true });
 }
 function closeAdmin() { if (!admEl) return; AS.open = false; admEl.hidden = true; root.style.overflow = ''; if (location.hash === '#admin') { try { history.replaceState(null, '', location.pathname + location.search); } catch (_) { /* ignore */ } } }

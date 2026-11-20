@@ -17,6 +17,8 @@ module.exports = {
   leadWebhook: env.LEAD_WEBHOOK_URL || '',
   /* optional: push every new "sell your unit" request to the company's WhatsApp through Meta's WhatsApp Cloud API (secrets stay in the environment, never in the code) */
   waToken: env.WA_CLOUD_TOKEN || '', waPhoneId: env.WA_CLOUD_PHONE_ID || '', waTo: env.WA_NOTIFY_TO || '', waTemplate: env.WA_TEMPLATE || '', waTemplateLang: env.WA_TEMPLATE_LANG || 'ar', waUrl: (env.WA_CLOUD_URL || 'https://graph.facebook.com/v21.0').replace(/\/+$/, ''),
+  /* mail notices: the dashboard holds the mailbox; this only lets a development setup use a mail server on the same machine */
+  smtpAllowPrivate: env.SMTP_ALLOW_PRIVATE === '1',
   googleVerification: env.GOOGLE_SITE_VERIFICATION || '',
   bingVerification: env.BING_SITE_VERIFICATION || '',
   brand: env.BRAND_NAME || 'ICONIC Real Estate',
